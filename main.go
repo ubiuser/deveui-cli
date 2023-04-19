@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net/http"
@@ -17,6 +17,10 @@ type Request struct {
 	Deveui string `json:"deveui"`
 }
 
+type Response struct {
+	Description string `json:"description"`
+}
+
 func main() {
 	hexStr, err := generateHexString(16)
 	code := hexStr[len(hexStr)-5:]
@@ -24,8 +28,6 @@ func main() {
 	if err != nil {
 		log.Print(err)
 	}
-
-	fmt.Print(hexStr)
 
 	client := http.Client{Timeout: time.Duration(time.Second * time.Duration(30))}
 	b := new(bytes.Buffer)
@@ -39,12 +41,24 @@ func main() {
 	}
 
 	resp, err := client.Post("http://europe-west1-machinemax-dev-d524.cloudfunctions.net/sensor-onboarding-sample", "application/json", b)
-
 	if err != nil {
 		log.Print(err)
 	}
 
-	fmt.Print(resp)
+	defer resp.Body.Close()
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Print(err)
+	}
+
+	if resp.StatusCode == http.StatusUnprocessableEntity || resp.StatusCode == http.StatusOK {
+		bodyString := string(bodyBytes)
+		log.Print(bodyString)
+	}
+
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func generateHexString(length int) (string, error) {

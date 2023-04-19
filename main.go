@@ -19,6 +19,7 @@ type Request struct {
 
 func main() {
 	hexStr, err := generateHexString(16)
+	code := hexStr[len(hexStr)-5:]
 
 	if err != nil {
 		log.Print(err)
@@ -29,7 +30,7 @@ func main() {
 	client := http.Client{Timeout: time.Duration(time.Second * time.Duration(30))}
 	b := new(bytes.Buffer)
 
-	reqBody := Request{Deveui: hexStr}
+	reqBody := Request{Deveui: code}
 
 	err = json.NewEncoder(b).Encode(&reqBody)
 

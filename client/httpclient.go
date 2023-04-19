@@ -8,22 +8,20 @@ import (
 )
 
 type HttpClient struct {
-	timeout     time.Duration
-	baseUrl     string
-	client      http.Client
-	contentType string
+	baseUrl string
+	client  http.Client
 }
 
 func NewHttpClient(duration time.Duration, baseUrl string) *HttpClient {
 	return &HttpClient{
-		timeout: duration,
+		client:  http.Client{Timeout: time.Duration(time.Second * time.Duration(duration))},
 		baseUrl: baseUrl,
 	}
 }
 
 func (h *HttpClient) Post(endpoint string, b *bytes.Buffer) (*http.Response, error) {
 	url := fmt.Sprintf("%s/%s", h.baseUrl, endpoint)
-	resp, err := h.client.Post(url, h.contentType, b)
+	resp, err := h.client.Post(url, "application/json", b)
 	if err != nil {
 		return nil, err
 	}

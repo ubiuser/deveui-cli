@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
-	"io"
+	"fmt"
 	"log"
 	"math/big"
-	"net/http"
 	"time"
+
+	"github.com/NickGowdy/deveui-cli/client"
 )
 
 const allowedChars = "ABCDEF0123456789"
@@ -17,48 +18,73 @@ type Request struct {
 	Deveui string `json:"deveui"`
 }
 
-type Response struct {
-	Description string `json:"description"`
+type Message struct {
+	Code   string
+	Status string
+}
+
+type Server struct {
+	msgch  chan Message
+	quitch chan struct{}
+}
+
+func (s *Server) StartAndListen() {
+	for {
+		select {
+		// block here until someone is sending a message to the channel
+		case msg := <-s.msgch:
+			fmt.Printf("code: %s with status: %s\n", msg.Code, msg.Status)
+		case <-s.quitch:
+		default:
+
+		}
+	}
 }
 
 func main() {
-	hexStr, err := generateHexString(16)
-	code := hexStr[len(hexStr)-5:]
 
-	if err != nil {
-		log.Print(err)
+	s := &Server{
+		msgch: make(chan Message, 10),
 	}
+	client := client.NewHttpClient(30, "http://europe-west1-machinemax-dev-d524.cloudfunctions.net")
 
-	client := http.Client{Timeout: time.Duration(time.Second * time.Duration(30))}
+	go s.StartAndListen()
+	// var i int
+	for {
+		time.Sleep(2000 * time.Millisecond)
+		hexStr, err := generateHexString(16)
+		if err != nil {
+			log.Print(err)
+		}
+
+		code := hexStr[len(hexStr)-5:]
+		go registerCode(code, client, s.msgch)
+	}
+}
+
+func registerCode(code string, client *client.HttpClient, msgch chan Message) {
+
 	b := new(bytes.Buffer)
-
 	reqBody := Request{Deveui: code}
 
-	err = json.NewEncoder(b).Encode(&reqBody)
-
+	err := json.NewEncoder(b).Encode(&reqBody)
 	if err != nil {
 		log.Print(err)
 	}
 
-	resp, err := client.Post("http://europe-west1-machinemax-dev-d524.cloudfunctions.net/sensor-onboarding-sample", "application/json", b)
+	resp, err := client.Post("sensor-onboarding-sample", b)
 	if err != nil {
 		log.Print(err)
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Print(err)
+
+	msg := Message{
+		Code:   code,
+		Status: resp.Status,
 	}
 
-	if resp.StatusCode == http.StatusUnprocessableEntity || resp.StatusCode == http.StatusOK {
-		bodyString := string(bodyBytes)
-		log.Print(bodyString)
-	}
-
-	if err != nil {
-		log.Print(err)
-	}
+	msgch <- msg
 }
 
 func generateHexString(length int) (string, error) {

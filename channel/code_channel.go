@@ -1,6 +1,10 @@
 package channel
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"time"
+)
 
 type Message struct {
 	Code   string
@@ -19,7 +23,9 @@ listening:
 		case msg := <-cc.Msgch:
 			fmt.Printf("code: %s with status: %s\n", msg.Code, msg.Status)
 		case <-cc.Quitch:
-			fmt.Print("shutting down...")
+			fmt.Print("shutting down...\n")
+			time.Sleep(1000)
+			os.Exit(4)
 			break listening
 		}
 	}

@@ -17,10 +17,18 @@ const allowedChars = "ABCDEF0123456789"
 type CodeProcessor struct {
 	Client         *client.HttpClient
 	CodeChannel    *channel.CodeChannel
+	SignalChannel  *channel.SignalChannel
 	RegisterNumber int
 }
 
-func (cp *CodeProcessor) Process() {
+func (cp *CodeProcessor) Start() {
+	go cp.CodeChannel.StartAndListen()
+	go cp.SignalChannel.StartAndListen()
+
+	process(cp)
+}
+
+func process(cp *CodeProcessor) {
 	var i int
 	var lock sync.Mutex
 	var wg sync.WaitGroup

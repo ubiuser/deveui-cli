@@ -16,6 +16,8 @@ func main() {
 		Quitch: make(chan struct{}),
 	}
 
+	signalChannel := &channel.SignalChannel{}
+
 	client := &client.HttpClient{
 		BaseUrl: "http://europe-west1-machinemax-dev-d524.cloudfunctions.net",
 		Client:  http.Client{Timeout: time.Duration(time.Second * time.Duration(30000))},
@@ -24,11 +26,9 @@ func main() {
 	CodeProcessor := &processor.CodeProcessor{
 		Client:         client,
 		CodeChannel:    codeChannel,
-		RegisterNumber: 100,
+		SignalChannel:  signalChannel,
+		RegisterNumber: 10,
 	}
 
-	go codeChannel.StartAndListen()
-
-	CodeProcessor.Process()
-
+	CodeProcessor.Start()
 }

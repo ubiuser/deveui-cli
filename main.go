@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net/http"
+	"sync"
 	"time"
 
 	"github.com/NickGowdy/deveui-cli/client"
@@ -24,19 +26,20 @@ type Message struct {
 }
 
 type Server struct {
-	msgch  chan Message
-	quitch chan struct{}
+	msgch   chan Message
+	quitch  chan struct{}
+	request int
 }
 
 func (s *Server) StartAndListen() {
+listening:
 	for {
 		select {
-		// block here until someone is sending a message to the channel
 		case msg := <-s.msgch:
 			fmt.Printf("code: %s with status: %s\n", msg.Code, msg.Status)
 		case <-s.quitch:
-		default:
-
+			fmt.Print("shutting down...")
+			break listening
 		}
 	}
 }
@@ -44,25 +47,59 @@ func (s *Server) StartAndListen() {
 func main() {
 
 	s := &Server{
-		msgch: make(chan Message, 10),
+		msgch:   make(chan Message, 10),
+		quitch:  make(chan struct{}),
+		request: 100,
 	}
-	client := client.NewHttpClient(30, "http://europe-west1-machinemax-dev-d524.cloudfunctions.net")
+	client := &client.HttpClient{
+		BaseUrl: "http://europe-west1-machinemax-dev-d524.cloudfunctions.net",
+		Client:  http.Client{Timeout: time.Duration(time.Second * time.Duration(30000))},
+	}
 
 	go s.StartAndListen()
-	// var i int
+
+	var i int
+	var lock sync.Mutex
+
+	var wg sync.WaitGroup
 	for {
-		time.Sleep(2000 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		hexStr, err := generateHexString(16)
 		if err != nil {
 			log.Print(err)
 		}
 
 		code := hexStr[len(hexStr)-5:]
-		go registerCode(code, client, s.msgch)
+		wg.Add(1)
+		go func(code string) {
+			resp, err := registerCode(code, client)
+			if err != nil {
+				log.Print(err)
+			}
+
+			if resp.StatusCode == 200 {
+				msg := Message{
+					Code:   code,
+					Status: resp.Status,
+				}
+
+				s.msgch <- msg
+				lock.Lock()
+				defer lock.Unlock()
+				i++
+			}
+
+			if i == 2 {
+				close(s.quitch)
+			}
+
+			wg.Done()
+		}(code)
 	}
+
 }
 
-func registerCode(code string, client *client.HttpClient, msgch chan Message) {
+func registerCode(code string, client *client.HttpClient) (*http.Response, error) {
 
 	b := new(bytes.Buffer)
 	reqBody := Request{Deveui: code}
@@ -78,13 +115,7 @@ func registerCode(code string, client *client.HttpClient, msgch chan Message) {
 	}
 
 	defer resp.Body.Close()
-
-	msg := Message{
-		Code:   code,
-		Status: resp.Status,
-	}
-
-	msgch <- msg
+	return resp, nil
 }
 
 func generateHexString(length int) (string, error) {

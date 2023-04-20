@@ -1,9 +1,12 @@
 package main
 
 import (
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/NickGowdy/deveui-cli/channel"
+	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/processor"
 	"github.com/joho/godotenv"
 )
@@ -19,11 +22,17 @@ func main() {
 	baseurl := os.Getenv("BASE_URL")
 
 	signalChannel := &channel.SignalChannel{}
+	httpClient := &http.Client{
+		Timeout: time.Second * TIMEOUT,
+	}
 
 	CodeProcessor := &processor.CodeProcessor{
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               baseurl,
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
+		Client: &client.LoraWanClient{
+			Client: httpClient,
+		},
 	}
 
 	go signalChannel.StartAndListen()

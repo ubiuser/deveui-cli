@@ -15,19 +15,17 @@ type MockClient struct {
 }
 
 func TestCanProcessCodes(t *testing.T) {
-	// codeChannel := &channel.CodeChannel{
-	// 	Msgch:  make(chan channel.Message, 10),
-	// 	Quitch: make(chan struct{}),
-	// }
-
-	// client := &MockClient{
-	// 	DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-	// 		return &http.Response{}, nil
-	// 	},
-	// }
+	client := &MockClient{
+		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+			return &http.Response{}, nil
+		},
+	}
 
 	CodeProcessor := &CodeProcessor{
-		MaxConcurrentJobs: 10,
+		CodeRegistrationLimit: 0,
+		MaxConcurrentJobs:     10,
+		BaseUrl:               "http://www.mock-url.com",
+		Client:                client,
 	}
 
 	reader := bufio.NewReader(os.Stdin)

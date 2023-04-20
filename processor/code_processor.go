@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 	"sync/atomic"
-	"time"
 
+	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/codegenerator"
 )
 
@@ -16,17 +16,18 @@ type CodeProcessor struct {
 	CodeRegistrationLimit int32
 	MaxConcurrentJobs     int
 	BaseUrl               string
+	Client                client.Client
 }
 
 func (cp *CodeProcessor) Start() {
 	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
-	client := http.Client{Timeout: time.Second * 30}
+	// client := http.Client{Timeout: time.Second * 30}
 	var count int32
 
 	for count < cp.CodeRegistrationLimit {
 		waitChan <- struct{}{}
 		go func(ops int32) {
-			saved := job(&client)
+			saved := job(cp.Client, cp.BaseUrl)
 			if saved {
 				atomic.AddInt32(&count, 1)
 			}
@@ -39,7 +40,7 @@ func (cp *CodeProcessor) Start() {
 	close(waitChan)
 }
 
-func job(client *http.Client) bool {
+func job(client client.Client, url string) bool {
 
 	code, err := codegenerator.Generate()
 
@@ -56,7 +57,7 @@ func job(client *http.Client) bool {
 		log.Print(err)
 	}
 
-	resp, err := client.Post("http://europe-west1-machinemax-dev-d524.cloudfunctions.net/sensor-onboarding-sample", "application/json", b)
+	resp, err := client.Post(url, "application/json", b)
 
 	if err != nil {
 		log.Print(err)

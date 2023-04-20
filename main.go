@@ -21,21 +21,25 @@ func main() {
 	godotenv.Load(".env")
 	baseurl := os.Getenv("BASE_URL")
 
+	// setup channel for listening to SIG cmds
 	signalChannel := &channel.SignalChannel{}
+
+	// setup clients for requests
 	httpClient := &http.Client{
 		Timeout: time.Second * TIMEOUT,
 	}
+	loraWanClient := &client.LoraWanClient{
+		Client: httpClient,
+	}
 
+	// setup processor to do work
 	CodeProcessor := &processor.CodeProcessor{
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               baseurl,
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
-		Client: &client.LoraWanClient{
-			Client: httpClient,
-		},
+		Client:                loraWanClient,
 	}
 
 	go signalChannel.StartAndListen()
-
 	CodeProcessor.Start()
 }

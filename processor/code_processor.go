@@ -20,14 +20,14 @@ type CodeProcessor struct {
 	RegisteredDevices     []map[int]string
 }
 
-func (cp *CodeProcessor) Start() *[]map[int]string {
+func (cp *CodeProcessor) Process() *[]map[int]string {
 	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
 	var count int32
 
 	for count < cp.CodeRegistrationLimit {
 		waitChan <- struct{}{}
 		go func(innerCount int32) {
-			saved, code := process(cp.Client, cp.BaseUrl)
+			saved, code := registerDevice(cp.Client, cp.BaseUrl)
 			if saved {
 				atomic.AddInt32(&count, 1)
 				cp.RegisteredDevices = append(cp.RegisteredDevices, map[int]string{int(count): code})
@@ -42,7 +42,7 @@ func (cp *CodeProcessor) Start() *[]map[int]string {
 	return &cp.RegisteredDevices
 }
 
-func process(client client.Client, url string) (bool, string) {
+func registerDevice(client client.Client, url string) (bool, string) {
 
 	code, err := codegenerator.Generate()
 

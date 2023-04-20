@@ -42,7 +42,7 @@ func main() {
 	}
 
 	go signalChannel.StartAndListen()
-	registeredDevices := CodeProcessor.Start()
+	registeredDevices := CodeProcessor.Process()
 
 	for _, d := range *registeredDevices {
 		for k, v := range d {

@@ -1,7 +1,8 @@
-package processor
+package client
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"testing"
@@ -11,26 +12,31 @@ type MockClient struct {
 	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
 }
 
-func TestCanProcessCodes(t *testing.T) {
-	client := &MockClient{
+func TestLorawanClientHappyPath(t *testing.T) {
+	mockClient := &MockClient{
 		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
 			return &http.Response{}, nil
 		},
 	}
 
-	CodeProcessor := &CodeProcessor{
-		CodeRegistrationLimit: 10,
-		MaxConcurrentJobs:     10,
-		BaseUrl:               "http://www.mock-url.com",
-		Client:                client,
+	loraWanClient := LoraWanClient{
+		Client: mockClient,
 	}
 
-	registeredDevices := CodeProcessor.Process()
+	b := new(bytes.Buffer)
+	reqBody := map[string]string{"Deveui": "Abcde"}
 
-	if len(*registeredDevices) != 10 {
-		t.Errorf("expecting 10 registered devices, but have: %d", len(*registeredDevices))
+	_ = json.NewEncoder(b).Encode(&reqBody)
+
+	resp, err := loraWanClient.Post("mock-url", "application/json", b)
+
+	if err != nil {
+		t.Errorf("err should be nil but is: %s", err.Error())
 	}
 
+	if resp.StatusCode != 200 {
+		t.Errorf("resp should be nil but is: %d", resp.StatusCode)
+	}
 }
 
 func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {

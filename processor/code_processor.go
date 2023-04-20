@@ -1,86 +1,70 @@
 package processor
 
 import (
-	"crypto/rand"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
-	"math/big"
-	"sync"
+	"net/http"
+	"sync/atomic"
+	"time"
 
-	"github.com/NickGowdy/deveui-cli/channel"
-	"github.com/NickGowdy/deveui-cli/client"
-	"github.com/NickGowdy/deveui-cli/register"
+	"github.com/NickGowdy/deveui-cli/codegenerator"
 )
 
-const allowedChars = "ABCDEF0123456789"
-
 type CodeProcessor struct {
-	Client         client.Client
-	CodeChannel    *channel.CodeChannel
-	SignalChannel  *channel.SignalChannel
-	RegisterNumber int
+	CodeRegistrationLimit int32
+	MaxConcurrentJobs     int
+	BaseUrl               string
 }
 
 func (cp *CodeProcessor) Start() {
-	go cp.CodeChannel.StartAndListen()
-	go cp.SignalChannel.StartAndListen()
 
-	process(cp)
-}
+	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
+	var count int32
 
-func process(cp *CodeProcessor) {
-	var i int
-	var lock sync.Mutex
-	var wg = &sync.WaitGroup{}
-	for i < cp.RegisterNumber {
-
-		hexStr, err := generateHexString(16)
-		if err != nil {
-			log.Print(err)
-		}
-		code := hexStr[len(hexStr)-5:]
-		codeRegister := &register.CodeRegister{
-			HttpClient: cp.Client,
-			Code:       code,
-		}
-		wg.Add(1)
-		go func(code string) {
-
-			resp, err := codeRegister.RegisterCode()
-			if err != nil {
-				log.Print(err)
+	for count < cp.CodeRegistrationLimit {
+		waitChan <- struct{}{}
+		go func(ops int32) {
+			saved := job()
+			if saved {
+				atomic.AddInt32(&count, 1)
 			}
 
-			if resp != nil {
-				defer resp.Body.Close()
+			<-waitChan
 
-				msg := channel.Message{
-					Code:   code,
-					Status: resp.Status,
-				}
-
-				cp.CodeChannel.Msgch <- msg
-				if resp.StatusCode == 200 {
-					lock.Lock()
-					defer lock.Unlock()
-					i++
-				}
-			}
-
-		}(code)
-		wg.Done()
+		}(count)
 	}
-	close(cp.CodeChannel.Quitch)
+
+	close(waitChan)
 }
 
-func generateHexString(length int) (string, error) {
-	max := big.NewInt(int64(len(allowedChars)))
-	b := make([]byte, length)
-	for i := range b {
-		n, err := rand.Int(rand.Reader, max)
-		if err != nil {
-			return "", err
-		}
-		b[i] = allowedChars[n.Int64()]
+func job() bool {
+	client := http.Client{Timeout: time.Second * 30}
+	code, err := codegenerator.Generate()
+
+	if err != nil {
+		log.Print(err)
+		return false
 	}
-	return string(b), nil
+
+	b := new(bytes.Buffer)
+	reqBody := map[string]string{"Deveui": code}
+
+	err = json.NewEncoder(b).Encode(&reqBody)
+	if err != nil {
+		log.Print(err)
+	}
+
+	resp, err := client.Post("http://europe-west1-machinemax-dev-d524.cloudfunctions.net/sensor-onboarding-sample", "application/json", b)
+
+	if err != nil {
+		log.Print(err)
+	}
+
+	defer resp.Body.Close()
+
+	fmt.Printf("%s\n", resp.Status)
+
+	return resp.StatusCode == http.StatusOK
 }

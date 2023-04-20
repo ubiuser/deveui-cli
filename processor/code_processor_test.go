@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"testing"
-
-	"github.com/NickGowdy/deveui-cli/channel"
 )
 
 type MockClient struct {
@@ -17,24 +15,19 @@ type MockClient struct {
 }
 
 func TestCanProcessCodes(t *testing.T) {
-	codeChannel := &channel.CodeChannel{
-		Msgch:  make(chan channel.Message, 10),
-		Quitch: make(chan struct{}),
-	}
+	// codeChannel := &channel.CodeChannel{
+	// 	Msgch:  make(chan channel.Message, 10),
+	// 	Quitch: make(chan struct{}),
+	// }
 
-	signalChannel := &channel.SignalChannel{}
-
-	client := &MockClient{
-		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-			return &http.Response{}, nil
-		},
-	}
+	// client := &MockClient{
+	// 	DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+	// 		return &http.Response{}, nil
+	// 	},
+	// }
 
 	CodeProcessor := &CodeProcessor{
-		Client:         client,
-		CodeChannel:    codeChannel,
-		SignalChannel:  signalChannel,
-		RegisterNumber: 10,
+		MaxConcurrentJobs: 10,
 	}
 
 	reader := bufio.NewReader(os.Stdin)

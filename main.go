@@ -46,7 +46,7 @@ func main() {
 
 	for _, d := range *registeredDevices {
 		for k, v := range d {
-			fmt.Println(k, "value is", v)
+			fmt.Printf("device: %d has id: %s\n", k, v)
 		}
 	}
 }

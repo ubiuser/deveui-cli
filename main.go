@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -12,8 +13,8 @@ import (
 )
 
 const (
-	MAX_CONCURRENT_JOBS     = 10
-	CODE_REGISTRATION_LIMIT = 10
+	MAX_CONCURRENT_JOBS     = /* Buffer limit for channel */ 10
+	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 100
 	TIMEOUT                 = /* Seconds */ 30000
 )
 
@@ -24,7 +25,7 @@ func main() {
 	// setup channel for listening to SIG cmds
 	signalChannel := &channel.SignalChannel{}
 
-	// setup clients for requests
+	// setup client for requests
 	httpClient := &http.Client{
 		Timeout: time.Second * TIMEOUT,
 	}
@@ -41,5 +42,11 @@ func main() {
 	}
 
 	go signalChannel.StartAndListen()
-	CodeProcessor.Start()
+	registeredDevices := CodeProcessor.Start()
+
+	for _, d := range *registeredDevices {
+		for k, v := range d {
+			fmt.Println(k, "value is", v)
+		}
+	}
 }

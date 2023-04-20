@@ -17,19 +17,20 @@ type CodeProcessor struct {
 	MaxConcurrentJobs     int
 	BaseUrl               string
 	Client                client.Client
+	RegisteredDevices     []map[int]string
 }
 
-func (cp *CodeProcessor) Start() {
+func (cp *CodeProcessor) Start() *[]map[int]string {
 	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
-	// client := http.Client{Timeout: time.Second * 30}
 	var count int32
 
 	for count < cp.CodeRegistrationLimit {
 		waitChan <- struct{}{}
-		go func(ops int32) {
-			saved := job(cp.Client, cp.BaseUrl)
+		go func(innerCount int32) {
+			saved, code := process(cp.Client, cp.BaseUrl)
 			if saved {
 				atomic.AddInt32(&count, 1)
+				cp.RegisteredDevices = append(cp.RegisteredDevices, map[int]string{int(count): code})
 			}
 
 			<-waitChan
@@ -38,15 +39,16 @@ func (cp *CodeProcessor) Start() {
 	}
 
 	close(waitChan)
+	return &cp.RegisteredDevices
 }
 
-func job(client client.Client, url string) bool {
+func process(client client.Client, url string) (bool, string) {
 
 	code, err := codegenerator.Generate()
 
 	if err != nil {
 		log.Print(err)
-		return false
+		return false, ""
 	}
 
 	b := new(bytes.Buffer)
@@ -67,5 +69,9 @@ func job(client client.Client, url string) bool {
 
 	fmt.Printf("%s\n", resp.Status)
 
-	return resp.StatusCode == http.StatusOK
+	if resp.StatusCode == http.StatusOK {
+		return true, code
+	} else {
+		return false, ""
+	}
 }

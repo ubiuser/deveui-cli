@@ -1,8 +1,12 @@
 package processor
 
 import (
+	"bufio"
 	"bytes"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/NickGowdy/deveui-cli/channel"
@@ -22,10 +26,7 @@ func TestCanProcessCodes(t *testing.T) {
 
 	client := &MockClient{
 		DoPost: func(endpoint string, b *bytes.Buffer) (*http.Response, error) {
-			// do whatever you want
-			return &http.Response{
-				StatusCode: http.StatusOK,
-			}, nil
+			return &http.Response{}, nil
 		},
 	}
 
@@ -36,9 +37,17 @@ func TestCanProcessCodes(t *testing.T) {
 		RegisterNumber: 10,
 	}
 
+	reader := bufio.NewReader(os.Stdin)
 	CodeProcessor.Start()
+
+	text, _ := reader.ReadString('\n')
+	fmt.Println(text)
 }
 
 func (m *MockClient) Post(endpoint string, b *bytes.Buffer) (*http.Response, error) {
-	return &http.Response{}, nil
+	return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+			Status:     "200 OK"},
+		nil
 }

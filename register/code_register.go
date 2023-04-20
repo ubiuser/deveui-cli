@@ -28,5 +28,7 @@ func (cr CodeRegister) RegisterCode() (*http.Response, error) {
 		log.Print(err)
 	}
 
+	defer resp.Body.Close()
+
 	return resp, nil
 }

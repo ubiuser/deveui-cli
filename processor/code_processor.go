@@ -30,7 +30,6 @@ func (cp *CodeProcessor) Start() {
 func process(cp *CodeProcessor) {
 	var i int
 	var lock sync.Mutex
-	var wg sync.WaitGroup
 	for {
 
 		hexStr, err := generateHexString(16)
@@ -43,7 +42,6 @@ func process(cp *CodeProcessor) {
 			Code:       code,
 		}
 
-		wg.Add(1)
 		go func(code string) {
 
 			resp, err := codeRegister.RegisterCode()
@@ -66,8 +64,6 @@ func process(cp *CodeProcessor) {
 			if i == cp.RegisterNumber {
 				close(cp.CodeChannel.Quitch)
 			}
-
-			wg.Done()
 		}(code)
 	}
 }

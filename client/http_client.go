@@ -18,6 +18,5 @@ func (h *HttpClient) Post(endpoint string, b *bytes.Buffer) (*http.Response, err
 		return nil, err
 	}
 
-	defer resp.Body.Close()
 	return resp, nil
 }

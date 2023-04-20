@@ -1,10 +1,10 @@
 package client
 
 import (
-	"bytes"
+	"io"
 	"net/http"
 )
 
 type Client interface {
-	Post(endpoint string, b *bytes.Buffer) (*http.Response, error)
+	Post(url string, contentType string, body io.Reader) (resp *http.Response, err error)
 }

@@ -23,12 +23,10 @@ func (cr CodeRegister) RegisterCode() (*http.Response, error) {
 		log.Print(err)
 	}
 
-	resp, err := cr.HttpClient.Post("sensor-onboarding-sample", b)
+	resp, err := cr.HttpClient.Post("sensor-onboarding-sample", "application/json", b)
 	if err != nil {
 		log.Print(err)
 	}
-
-	defer resp.Body.Close()
 
 	return resp, nil
 }

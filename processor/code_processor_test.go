@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -13,7 +13,7 @@ import (
 )
 
 type MockClient struct {
-	DoPost func(endpoint string, b *bytes.Buffer) (*http.Response, error)
+	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
 }
 
 func TestCanProcessCodes(t *testing.T) {
@@ -25,7 +25,7 @@ func TestCanProcessCodes(t *testing.T) {
 	signalChannel := &channel.SignalChannel{}
 
 	client := &MockClient{
-		DoPost: func(endpoint string, b *bytes.Buffer) (*http.Response, error) {
+		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
 			return &http.Response{}, nil
 		},
 	}
@@ -44,10 +44,10 @@ func TestCanProcessCodes(t *testing.T) {
 	fmt.Println(text)
 }
 
-func (m *MockClient) Post(endpoint string, b *bytes.Buffer) (*http.Response, error) {
+func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
 	return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+			Body:       io.NopCloser(bytes.NewReader(nil)),
 			Status:     "200 OK"},
 		nil
 }

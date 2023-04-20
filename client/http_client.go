@@ -1,19 +1,19 @@
 package client
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 )
 
 type HttpClient struct {
 	BaseUrl string
-	Client  http.Client
+	Client  Client
 }
 
-func (h *HttpClient) Post(endpoint string, b *bytes.Buffer) (*http.Response, error) {
-	url := fmt.Sprintf("%s/%s", h.BaseUrl, endpoint)
-	resp, err := h.Client.Post(url, "application/json", b)
+func (h *HttpClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+	fullUrl := fmt.Sprintf("%s/%s", h.BaseUrl, url)
+	resp, err = h.Client.Post(fullUrl, contentType, body)
 	if err != nil {
 		return nil, err
 	}

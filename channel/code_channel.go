@@ -2,7 +2,6 @@ package channel
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -25,7 +24,7 @@ listening:
 		case <-cc.Quitch:
 			fmt.Print("shutting down...\n")
 			time.Sleep(1000)
-			os.Exit(4)
+			// os.Exit(4)
 			break listening
 		}
 	}

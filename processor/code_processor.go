@@ -30,7 +30,8 @@ func (cp *CodeProcessor) Start() {
 func process(cp *CodeProcessor) {
 	var i int
 	var lock sync.Mutex
-	for {
+	var wg = &sync.WaitGroup{}
+	for i < cp.RegisterNumber {
 
 		hexStr, err := generateHexString(16)
 		if err != nil {
@@ -41,7 +42,7 @@ func process(cp *CodeProcessor) {
 			HttpClient: cp.Client,
 			Code:       code,
 		}
-
+		wg.Add(1)
 		go func(code string) {
 
 			resp, err := codeRegister.RegisterCode()
@@ -49,23 +50,26 @@ func process(cp *CodeProcessor) {
 				log.Print(err)
 			}
 
-			if resp.StatusCode == 200 {
+			if resp != nil {
+				defer resp.Body.Close()
+
 				msg := channel.Message{
 					Code:   code,
 					Status: resp.Status,
 				}
 
 				cp.CodeChannel.Msgch <- msg
-				lock.Lock()
-				defer lock.Unlock()
-				i++
+				if resp.StatusCode == 200 {
+					lock.Lock()
+					defer lock.Unlock()
+					i++
+				}
 			}
 
-			if i == cp.RegisterNumber {
-				close(cp.CodeChannel.Quitch)
-			}
 		}(code)
+		wg.Done()
 	}
+	close(cp.CodeChannel.Quitch)
 }
 
 func generateHexString(length int) (string, error) {

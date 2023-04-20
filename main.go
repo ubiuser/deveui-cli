@@ -37,7 +37,13 @@ func main() {
 
 	client := &client.HttpClient{
 		BaseUrl: baseurl,
-		Client:  http.Client{Timeout: time.Duration(time.Second * time.Duration(timeout))},
+		Client: &http.Client{
+			Timeout: time.Duration(time.Second * time.Duration(timeout)),
+			Transport: &http.Transport{
+				MaxIdleConns:        10,
+				MaxIdleConnsPerHost: 10,
+			},
+		},
 	}
 
 	CodeProcessor := &processor.CodeProcessor{

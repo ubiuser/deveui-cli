@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync/atomic"
+	"sync"
 
 	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/codegenerator"
 )
 
 type CodeProcessor struct {
-	CodeRegistrationLimit int32
+	CodeRegistrationLimit int
 	MaxConcurrentJobs     int
 	BaseUrl               string
 	Client                client.Client
@@ -27,20 +27,26 @@ type RegisterDevice struct {
 
 func (cp *CodeProcessor) Process() *[]RegisterDevice {
 	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
-	var count int32
+	var count int
+	m := sync.Mutex{}
+	wg := sync.WaitGroup{}
 
 	for count < cp.CodeRegistrationLimit {
 		waitChan <- struct{}{}
-		go func(innerCount int32) {
+		wg.Add(1)
+		go func(innerCount int) {
 			saved, registeredDevice := registerDevice(cp.Client, cp.BaseUrl)
 			if saved {
-				atomic.AddInt32(&count, 1)
+				m.Lock()
+				count++
 				cp.RegisteredDevices = append(cp.RegisteredDevices, registeredDevice)
+				defer m.Unlock()
 			}
 
 			<-waitChan
 
 		}(count)
+		wg.Done()
 	}
 
 	close(waitChan)

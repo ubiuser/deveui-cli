@@ -19,14 +19,14 @@ type CodeProcessor struct {
 }
 
 func (cp *CodeProcessor) Start() {
-
 	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
+	client := http.Client{Timeout: time.Second * 30}
 	var count int32
 
 	for count < cp.CodeRegistrationLimit {
 		waitChan <- struct{}{}
 		go func(ops int32) {
-			saved := job()
+			saved := job(&client)
 			if saved {
 				atomic.AddInt32(&count, 1)
 			}
@@ -39,8 +39,8 @@ func (cp *CodeProcessor) Start() {
 	close(waitChan)
 }
 
-func job() bool {
-	client := http.Client{Timeout: time.Second * 30}
+func job(client *http.Client) bool {
+
 	code, err := codegenerator.Generate()
 
 	if err != nil {

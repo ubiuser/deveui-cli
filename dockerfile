@@ -15,8 +15,6 @@ COPY . .
 # Build the Go app
 RUN go build -o ./deveui-cli .
 
-# This container exposes port 8080 to the outside world
-EXPOSE 8081
 
 # Run the binary program produced by `go install`
 ENTRYPOINT ["./deveui-cli"]

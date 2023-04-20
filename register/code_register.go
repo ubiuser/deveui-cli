@@ -10,7 +10,7 @@ import (
 )
 
 type CodeRegister struct {
-	HttpClient client.HttpClient
+	HttpClient client.Client
 	Code       string
 }
 
@@ -28,6 +28,5 @@ func (cr CodeRegister) RegisterCode() (*http.Response, error) {
 		log.Print(err)
 	}
 
-	defer resp.Body.Close()
 	return resp, nil
 }

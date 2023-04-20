@@ -1,4 +1,5 @@
-## deveui-cli
+# MachineMax deveui-cli
+
 
 <p>This is a command line application written in Golang for generation of unique 16-character (hex) identifiers called DevEUI which are used for each MachineMax senor</p>
 

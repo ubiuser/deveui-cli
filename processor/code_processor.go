@@ -5,7 +5,6 @@ import (
 	"log"
 	"math/big"
 	"sync"
-	"time"
 
 	"github.com/NickGowdy/deveui-cli/channel"
 	"github.com/NickGowdy/deveui-cli/client"
@@ -15,7 +14,7 @@ import (
 const allowedChars = "ABCDEF0123456789"
 
 type CodeProcessor struct {
-	Client         *client.HttpClient
+	Client         client.Client
 	CodeChannel    *channel.CodeChannel
 	SignalChannel  *channel.SignalChannel
 	RegisterNumber int
@@ -33,7 +32,6 @@ func process(cp *CodeProcessor) {
 	var lock sync.Mutex
 	var wg sync.WaitGroup
 	for {
-		time.Sleep(500 * time.Millisecond)
 
 		hexStr, err := generateHexString(16)
 		if err != nil {
@@ -41,7 +39,7 @@ func process(cp *CodeProcessor) {
 		}
 		code := hexStr[len(hexStr)-5:]
 		codeRegister := &register.CodeRegister{
-			HttpClient: *cp.Client,
+			HttpClient: cp.Client,
 			Code:       code,
 		}
 

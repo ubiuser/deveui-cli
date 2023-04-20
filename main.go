@@ -14,7 +14,7 @@ import (
 
 const (
 	MAX_CONCURRENT_JOBS     = /* Buffer limit for channel */ 10
-	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 100
+	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 10
 	TIMEOUT                 = /* Seconds */ 30000
 )
 
@@ -44,9 +44,7 @@ func main() {
 	go signalChannel.StartAndListen()
 	registeredDevices := CodeProcessor.Process()
 
-	for _, d := range *registeredDevices {
-		for k, v := range d {
-			fmt.Printf("device: %d has id: %s\n", k, v)
-		}
+	for i, d := range *registeredDevices {
+		fmt.Printf("device: %d has identifier: %s and code: %s\n", i+1, d.Identifier, d.Code)
 	}
 }

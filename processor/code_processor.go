@@ -17,20 +17,25 @@ type CodeProcessor struct {
 	MaxConcurrentJobs     int
 	BaseUrl               string
 	Client                client.Client
-	RegisteredDevices     []map[int]string
+	RegisteredDevices     []RegisterDevice
 }
 
-func (cp *CodeProcessor) Process() *[]map[int]string {
+type RegisterDevice struct {
+	Identifier string
+	Code       string
+}
+
+func (cp *CodeProcessor) Process() *[]RegisterDevice {
 	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
 	var count int32
 
 	for count < cp.CodeRegistrationLimit {
 		waitChan <- struct{}{}
 		go func(innerCount int32) {
-			saved, code := registerDevice(cp.Client, cp.BaseUrl)
+			saved, registeredDevice := registerDevice(cp.Client, cp.BaseUrl)
 			if saved {
 				atomic.AddInt32(&count, 1)
-				cp.RegisteredDevices = append(cp.RegisteredDevices, map[int]string{int(count): code})
+				cp.RegisteredDevices = append(cp.RegisteredDevices, registeredDevice)
 			}
 
 			<-waitChan
@@ -42,13 +47,17 @@ func (cp *CodeProcessor) Process() *[]map[int]string {
 	return &cp.RegisteredDevices
 }
 
-func registerDevice(client client.Client, url string) (bool, string) {
-
-	code, err := codegenerator.Generate()
-
+func registerDevice(client client.Client, url string) (bool, RegisterDevice) {
+	hex, err := codegenerator.GenerateHexString(16)
 	if err != nil {
 		log.Print(err)
-		return false, ""
+		return false, RegisterDevice{}
+	}
+
+	code, err := codegenerator.Generate(hex)
+	if err != nil {
+		log.Print(err)
+		return false, RegisterDevice{}
 	}
 
 	b := new(bytes.Buffer)
@@ -70,8 +79,8 @@ func registerDevice(client client.Client, url string) (bool, string) {
 	fmt.Printf("%s\n", resp.Status)
 
 	if resp.StatusCode == http.StatusOK {
-		return true, code
+		return true, RegisterDevice{Code: code, Identifier: hex}
 	} else {
-		return false, ""
+		return false, RegisterDevice{}
 	}
 }

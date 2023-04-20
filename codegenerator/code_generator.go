@@ -7,15 +7,12 @@ import (
 
 const allowedChars = "ABCDEF0123456789"
 
-func Generate() (string, error) {
-	hexStr, err := generateHexString(16)
-	if err != nil {
-		return "", err
-	}
-	return hexStr[len(hexStr)-5:], nil
+func Generate(hex string) (string, error) {
+
+	return hex[len(hex)-5:], nil
 }
 
-func generateHexString(length int) (string, error) {
+func GenerateHexString(length int) (string, error) {
 	max := big.NewInt(int64(len(allowedChars)))
 	b := make([]byte, length)
 	for i := range b {

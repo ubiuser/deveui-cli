@@ -62,7 +62,7 @@ func registerDevice(client client.Client, url string) (bool, string) {
 	resp, err := client.Post(url, "application/json", b)
 
 	if err != nil {
-		log.Print(err)
+		log.Fatal(err)
 	}
 
 	defer resp.Body.Close()

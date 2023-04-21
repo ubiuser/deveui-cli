@@ -71,9 +71,9 @@ Finally to check for race conditions, use: `go test -race ./...`
 
 Nick Gowdy - nickgowdy87@gmail.com
 
-Website - [www.nickgowdy.com](www.nickgowdy.com)
+Website <a href="http://www.nickgowdy.com/" target="_blank">http://www.nickgowdy.com/</a>
 
-Github - [https://github.com/nickgowdy](https://github.com/nickgowdy)
+Github <a href="https://github.com/nickgowdy" target="_blank">https://github.com/nickgowdy</a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/NickGowdy/deveui-cli/channel"
 	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/processor"
 	"github.com/joho/godotenv"
@@ -14,16 +17,16 @@ import (
 
 const (
 	MAX_CONCURRENT_JOBS     = /* Buffer limit for channel */ 10
-	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 10
-	TIMEOUT                 = /* Seconds */ 30000
+	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 100
+	TIMEOUT                 = /* Seconds */ 5
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	godotenv.Load(".env")
 	baseurl := os.Getenv("BASE_URL")
-
-	// setup channel for listening to SIG cmds
-	signalChannel := &channel.SignalChannel{}
 
 	// setup client for requests
 	httpClient := &http.Client{
@@ -34,17 +37,45 @@ func main() {
 	}
 
 	// setup processor to do work
-	CodeProcessor := &processor.CodeProcessor{
+	codeProcessor := &processor.CodeProcessor{
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               baseurl,
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
 		Client:                loraWanClient,
+		RegisteredDevices:     make(chan processor.RegisterDevice),
 	}
 
-	go signalChannel.StartAndListen()
-	registeredDevices := CodeProcessor.Process()
+	work := make(chan struct{}, MAX_CONCURRENT_JOBS)
+	go func() {
+		for {
+			work <- struct{}{}
+		}
+	}()
 
-	for i, d := range *registeredDevices {
-		fmt.Printf("device: %d has identifier: %s and code: %s\n", i+1, d.Identifier, d.Code)
+	// Spawn workers
+	for j := 0; j < MAX_CONCURRENT_JOBS; j++ {
+		go codeProcessor.Worker(ctx, work)
 	}
+
+	n := 0
+	for d := range codeProcessor.RegisteredDevices {
+		fmt.Printf("device: %d has identifier: %s and code: %s\n", n+1, d.Identifier, d.Code)
+		n += 1
+		if n == CODE_REGISTRATION_LIMIT {
+			break
+		}
+	}
+
+	// goroutine to listen for syscall.SIGTERM, syscall.SIGINT
+	go func() {
+		cancelChan := make(chan os.Signal, 1)
+		signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
+		go func() {
+			for {
+				time.Sleep(1000)
+			}
+		}()
+		sig := <-cancelChan
+		log.Printf("Caught signal %v", sig)
+	}()
 }

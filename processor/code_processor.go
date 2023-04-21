@@ -2,11 +2,10 @@ package processor
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"sync"
 
 	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/codegenerator"
@@ -17,7 +16,7 @@ type CodeProcessor struct {
 	MaxConcurrentJobs     int
 	BaseUrl               string
 	Client                client.Client
-	RegisteredDevices     []RegisterDevice
+	RegisteredDevices     chan RegisterDevice
 }
 
 type RegisterDevice struct {
@@ -25,32 +24,18 @@ type RegisterDevice struct {
 	Code       string
 }
 
-func (cp *CodeProcessor) Process() *[]RegisterDevice {
-	waitChan := make(chan struct{}, cp.MaxConcurrentJobs)
-	var count int
-	m := sync.Mutex{}
-	wg := sync.WaitGroup{}
-
-	for count < cp.CodeRegistrationLimit {
-		waitChan <- struct{}{}
-		wg.Add(1)
-		go func(innerCount int) {
+func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-work:
 			saved, registeredDevice := registerDevice(cp.Client, cp.BaseUrl)
 			if saved {
-				m.Lock()
-				count++
-				cp.RegisteredDevices = append(cp.RegisteredDevices, registeredDevice)
-				defer m.Unlock()
+				cp.RegisteredDevices <- registeredDevice
 			}
-
-			<-waitChan
-
-		}(count)
-		wg.Done()
+		}
 	}
-
-	close(waitChan)
-	return &cp.RegisteredDevices
 }
 
 func registerDevice(client client.Client, url string) (bool, RegisterDevice) {
@@ -81,8 +66,6 @@ func registerDevice(client client.Client, url string) (bool, RegisterDevice) {
 	}
 
 	defer resp.Body.Close()
-
-	fmt.Printf("%s\n", resp.Status)
 
 	if resp.StatusCode == http.StatusOK {
 		return true, RegisterDevice{Code: code, Identifier: hex}

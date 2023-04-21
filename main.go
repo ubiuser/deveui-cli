@@ -60,6 +60,20 @@ func main() {
 	defer cancel()
 
 	work := make(chan struct{}, MAX_CONCURRENT_JOBS)
+	listener := make(chan os.Signal, 1)
+
+	// goroutine to listen for syscall.SIGTERM, syscall.SIGINT
+	go func() {
+		signal.Notify(listener, syscall.SIGTERM, syscall.SIGINT)
+		go func() {
+			for {
+				time.Sleep(1000)
+			}
+		}()
+		sig := <-listener
+		log.Printf("Caught signal %v", sig)
+	}()
+
 	go func() {
 		for {
 			work <- struct{}{}
@@ -81,16 +95,6 @@ func main() {
 		}
 	}
 
-	// goroutine to listen for syscall.SIGTERM, syscall.SIGINT
-	go func() {
-		cancelChan := make(chan os.Signal, 1)
-		signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
-		go func() {
-			for {
-				time.Sleep(1000)
-			}
-		}()
-		sig := <-cancelChan
-		log.Printf("Caught signal %v", sig)
-	}()
+	close(work)
+	close(listener)
 }

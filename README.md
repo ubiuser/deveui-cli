@@ -52,15 +52,31 @@ CODE_REGISTRATION_LIMIT=100
 
 Then to run locally, use: `go run main.go`.
 
-Alternatively, this code can also be run via [Docker](https://www.docker.com/). To build the docker image use: `docker build -t deveui-cli . --build-arg BASE_URL=${BASE_URL} --build-arg TIMEOUT=${TIMEOUT} --build-arg CODE_REGISTRATION_LIMIT=${CODE_REGISTRATION_LIMIT}`.
+Alternatively, this code can also be run via docker. To build the docker image use: 
+```
+docker build -t deveui-cli . --build-arg BASE_URL=${BASE_URL} --build-arg TIMEOUT=${TIMEOUT} --build-arg CODE_REGISTRATION_LIMIT=${CODE_REGISTRATION_LIMIT}.
+```
 
-To run the docker image: `docker run deveui-cli`
+To run the docker image: 
+```
+docker run deveui-cli
+```
 
-To run the tests use: `go test ./...` and to check code coverage: `go test -coverprofile=coverage.out ./... ; go tool cover -html=coverage.out`
+To run the tests use: 
+```
+go test ./...
+``` 
+and to check code coverage: 
+```
+go test -coverprofile=coverage.out ./... ; go tool cover -html=coverage.out
+```
 
-Finally to check for race conditions, use: `go test -race ./...`
+Finally to check for race conditions, use: 
+```
+go test -race ./...
+```
 
-## Roadmap
+## Checklist
 
 - [x] Implement solution
 - [x] Write unit tests
@@ -69,13 +85,12 @@ Finally to check for race conditions, use: `go test -race ./...`
 
 ## Contact
 
-Nick Gowdy - nickgowdy87@gmail.com
+Email - nickgowdy87@gmail.com
 
 Website <a href="http://www.nickgowdy.com/" target="_blank">http://www.nickgowdy.com/</a>
 
 Github <a href="https://github.com/nickgowdy" target="_blank">https://github.com/nickgowdy</a>
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 

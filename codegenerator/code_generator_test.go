@@ -6,8 +6,8 @@ import (
 
 func TestCanGenerateValidCode(t *testing.T) {
 	allowedChars := []string{"A", "B", "C", "D", "E", "F", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
-	hex, _ := GenerateHexString(16)
-	code, err := Generate(hex)
+	hex, _ := GenerateHexString()
+	code, err := GenerateCode(hex)
 
 	if err != nil {
 		t.Errorf("error should be nil, but is %s", err.Error())

@@ -24,6 +24,14 @@ type RegisterDevice struct {
 	Code       string
 }
 
+// Worker attempts to register a valid DevEUI via external LoRaWAN API.
+// If successfull, a RegisterDevice struct with it's Identifier and Code will be sent to the work channel.
+//
+// # Example
+//
+//	Identifier: 1CEB0080F074F750, Code: 4F750
+//
+// When an unexpected error occurs, return ctx.Err instead.
 func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 	for {
 		select {
@@ -39,13 +47,13 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 }
 
 func registerDevice(client client.Client, url string) (bool, RegisterDevice) {
-	hex, err := codegenerator.GenerateHexString(16)
+	hex, err := codegenerator.GenerateHexString()
 	if err != nil {
 		log.Print(err)
 		return false, RegisterDevice{}
 	}
 
-	code, err := codegenerator.Generate(hex)
+	code, err := codegenerator.GenerateCode(hex)
 	if err != nil {
 		log.Print(err)
 		return false, RegisterDevice{}

@@ -63,9 +63,9 @@ func main() {
 	work := make(chan struct{}, MAX_CONCURRENT_JOBS)
 	listener := make(chan os.Signal, 1)
 
-	// goroutine to listen for syscall.SIGTERM, syscall.SIGINT
+	// goroutine to listen for syscall.SIGINT
 	go func() {
-		signal.Notify(listener, syscall.SIGTERM, syscall.SIGINT)
+		signal.Notify(listener, syscall.SIGINT)
 		go func() {
 			for {
 				time.Sleep(1000)

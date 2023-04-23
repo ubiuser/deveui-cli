@@ -45,7 +45,7 @@ func registerDevice(client client.Client, url string) (bool, *device.Device) {
 	device := device.NewDevice()
 
 	b := new(bytes.Buffer)
-	reqBody := map[string]string{"Deveui": device.Code}
+	reqBody := map[string]string{"Deveui": device.Identifier}
 
 	err := json.NewEncoder(b).Encode(&reqBody)
 	if err != nil {

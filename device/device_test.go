@@ -16,6 +16,10 @@ func TestCanGenerateValidCode(t *testing.T) {
 		t.Errorf("code should  be 5 characters long, but is %d", len(device.Code))
 	}
 
+	if device.Identifier[len(device.Identifier)-5:] != device.Code {
+		t.Errorf("code should be last 5 characters of identifier, but is %s", device.Code)
+	}
+
 	hasChar := false
 	for _, char := range allowedChars {
 		if char == string(device.Code[0]) {

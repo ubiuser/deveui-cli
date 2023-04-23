@@ -24,7 +24,7 @@ type Device struct {
 func NewDevice() *Device {
 	hex, err := generateHexString()
 	if err != nil {
-		log.Print(err)
+		log.Fatal(err)
 	}
 
 	return &Device{

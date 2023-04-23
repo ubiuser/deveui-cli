@@ -75,6 +75,7 @@ func main() {
 		log.Printf("Caught signal %v", sig)
 	}()
 
+	// Fill work buffer so we can start processing work
 	go func() {
 		for {
 			work <- struct{}{}
@@ -96,6 +97,7 @@ func main() {
 		}
 	}
 
+	// Channels have finished work, close them in main process
 	close(work)
 	close(listener)
 }

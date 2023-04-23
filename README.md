@@ -66,9 +66,14 @@ To run the tests use:
 ```
 go test ./...
 ``` 
-and to check code coverage: 
+To check code coverage: 
 ```
 go test -coverprofile=coverage.out ./... ; go tool cover -html=coverage.out
+```
+
+And to run benchmark tests for CPU and memory consumption:
+```
+go test -bench=. -benchmem
 ```
 
 Finally to check for race conditions, use: 

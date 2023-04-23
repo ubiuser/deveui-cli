@@ -93,11 +93,7 @@ func main() {
 		fmt.Printf("device: %d has identifier: %s and code: %s\n", count+1, d.Identifier, d.Code)
 		count += 1
 		if count == CODE_REGISTRATION_LIMIT {
-			// close channels now that work is done
-			close(work)
-			close(listener)
 			break
 		}
 	}
-
 }

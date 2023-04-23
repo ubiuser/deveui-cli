@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/NickGowdy/deveui-cli/client"
-	"github.com/NickGowdy/deveui-cli/codegenerator"
+	"github.com/NickGowdy/deveui-cli/device"
 )
 
 type CodeProcessor struct {
@@ -16,12 +16,7 @@ type CodeProcessor struct {
 	MaxConcurrentJobs     int
 	BaseUrl               string
 	Client                client.Client
-	RegisteredDevices     chan RegisterDevice
-}
-
-type RegisterDevice struct {
-	Identifier string
-	Code       string
+	Device                chan device.Device
 }
 
 // Worker attempts to register a valid DevEUI via external LoRaWAN API.
@@ -40,29 +35,19 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 		case <-work:
 			saved, registeredDevice := registerDevice(cp.Client, cp.BaseUrl)
 			if saved {
-				cp.RegisteredDevices <- registeredDevice
+				cp.Device <- *registeredDevice
 			}
 		}
 	}
 }
 
-func registerDevice(client client.Client, url string) (bool, RegisterDevice) {
-	hex, err := codegenerator.GenerateHexString()
-	if err != nil {
-		log.Print(err)
-		return false, RegisterDevice{}
-	}
-
-	code, err := codegenerator.GenerateCode(hex)
-	if err != nil {
-		log.Print(err)
-		return false, RegisterDevice{}
-	}
+func registerDevice(client client.Client, url string) (bool, *device.Device) {
+	device := device.NewDevice()
 
 	b := new(bytes.Buffer)
-	reqBody := map[string]string{"Deveui": code}
+	reqBody := map[string]string{"Deveui": device.Code}
 
-	err = json.NewEncoder(b).Encode(&reqBody)
+	err := json.NewEncoder(b).Encode(&reqBody)
 	if err != nil {
 		log.Print(err)
 	}
@@ -76,8 +61,8 @@ func registerDevice(client client.Client, url string) (bool, RegisterDevice) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		return true, RegisterDevice{Code: code, Identifier: hex}
+		return true, device
 	} else {
-		return false, RegisterDevice{}
+		return false, nil
 	}
 }

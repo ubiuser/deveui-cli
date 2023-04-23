@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/NickGowdy/deveui-cli/client"
+	"github.com/NickGowdy/deveui-cli/device"
 	"github.com/NickGowdy/deveui-cli/processor"
 	"github.com/joho/godotenv"
 )
@@ -53,7 +54,7 @@ func main() {
 		BaseUrl:               baseurl,
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
 		Client:                loraWanClient,
-		RegisteredDevices:     make(chan processor.RegisterDevice),
+		Device:                make(chan device.Device),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -87,7 +88,7 @@ func main() {
 
 	// stdout any registered devices and increment until CODE_REGISTRATION_LIMIT is reached.
 	count := 0
-	for d := range codeProcessor.RegisteredDevices {
+	for d := range codeProcessor.Device {
 		fmt.Printf("device: %d has identifier: %s and code: %s\n", count+1, d.Identifier, d.Code)
 		count += 1
 		if count == CODE_REGISTRATION_LIMIT {

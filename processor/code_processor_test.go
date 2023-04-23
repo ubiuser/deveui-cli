@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/NickGowdy/deveui-cli/device"
 )
 
 type MockClient struct {
@@ -33,7 +35,7 @@ func TestCanProcessCodes(t *testing.T) {
 		MaxConcurrentJobs:     10,
 		BaseUrl:               "http://www.mock-url.com",
 		Client:                client,
-		RegisteredDevices:     make(chan RegisterDevice),
+		Device:                make(chan device.Device),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -53,7 +55,7 @@ func TestCanProcessCodes(t *testing.T) {
 	}
 
 	n := 0
-	for d := range codeProcessor.RegisteredDevices {
+	for d := range codeProcessor.Device {
 		fmt.Printf("device: %d has identifier: %s and code: %s\n", n+1, d.Identifier, d.Code)
 		n += 1
 		if n == 10 {

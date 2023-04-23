@@ -1,7 +1,8 @@
-package codegenerator
+package device
 
 import (
 	"crypto/rand"
+	"log"
 	"math/big"
 )
 
@@ -10,13 +11,26 @@ const (
 	DEV_EUI_LENGTH = 16                 // valid DevEUI is string of length 16
 )
 
-// Generate valid DevEUI code from DevEUI identifier.
+type Device struct {
+	Identifier string
+	Code       string
+}
+
+// Build new device with DevEUI identifier and code values.
 //
 // # Example
 //
-//	1CEB0080F074F750 will return 4F750
-func GenerateCode(hex string) (string, error) {
-	return hex[len(hex)-5:], nil
+//	1CEB0080F074F750 4F750
+func NewDevice() *Device {
+	hex, err := generateHexString()
+	if err != nil {
+		log.Print(err)
+	}
+
+	return &Device{
+		Identifier: hex,
+		Code:       hex[len(hex)-5:],
+	}
 }
 
 // Generate valid DevEUI identifier value.
@@ -24,7 +38,7 @@ func GenerateCode(hex string) (string, error) {
 // # Example
 //
 //	1CEB0080F074F750
-func GenerateHexString() (string, error) {
+func generateHexString() (string, error) {
 	max := big.NewInt(int64(len(ALLOWED_CHARS)))
 	b := make([]byte, DEV_EUI_LENGTH)
 	for i := range b {

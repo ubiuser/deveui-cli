@@ -87,6 +87,7 @@ go test -race ./...
 - [x] Write unit tests
 - [x] Write readme
 - [ ] More unit tests around unhappy paths for higher code coverage
+- [ ] Discuss with engineers how to improve code
 
 ## Contact
 

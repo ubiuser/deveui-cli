@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// I'd make them configurable from env vars
 const (
 	MAX_CONCURRENT_JOBS     = /* Buffer limit for channel */ 10
 	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 100
@@ -37,16 +37,24 @@ Once this program starts, it will listen to syscall.SIGTERM, syscall.SIGINT via 
 This is to handle any unexpected terminations of the program and to resume processing DevEUIs.
 */
 func main() {
-	godotenv.Load(".env")
+	// always check for errors
+	if err := godotenv.Load(".env"); err != nil {
+		// since this is just the app init in main, you can either panic or have a log.Fatal to abort further
+		// execution on critical errors
+		panic("error loading.env file")
+	}
+
 	baseurl := os.Getenv("BASE_URL")
+	if baseurl == "" {
+		// either error or set a default value, but in the latter probably log the fact
+		// I like to use github.com/kelseyhightower/envconfig package for configuration that comes from
+		// environment variables
+		panic("BASE_URL environment variable is not set")
+	}
 
 	// setup client for requests
-	httpClient := &http.Client{
-		Timeout: time.Second * TIMEOUT,
-	}
-	loraWanClient := &client.LoraWanClient{
-		Client: httpClient,
-	}
+	// I'd have the http client on the LoraWanClient struct as an internal field, I'll explain in the other file
+	loraWanClient := client.NewLoraWanClient(TIMEOUT)
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
@@ -66,13 +74,19 @@ func main() {
 	// goroutine to listen for syscall.SIGINT
 	go func() {
 		signal.Notify(listener, syscall.SIGINT)
+		// this goroutine doesn't do anything useful, just burns resources
+		// you start a new goroutine that sleeps for 1000 in an endless loop
 		go func() {
 			for {
-				time.Sleep(1000)
+				time.Sleep(1000) // add a unit of time, eg. time.Nanosecond
 			}
 		}()
+		// your code blocks here until you receive a syscall.SIGINT
 		sig := <-listener
+		// then print a message to the console
 		log.Printf("Caught signal %v", sig)
+		// but since this is all in a goroutine, your app keeps running on the main thread
+		// at least you should call cancel(), but still the rest of the app would need some adjustments
 	}()
 
 	// Fill work buffer so we can start processing work
@@ -83,6 +97,7 @@ func main() {
 	}()
 
 	// Spawn workers
+	//the 10 workers will sit there waiting even if there isn't that much work to do
 	for job := 0; job < MAX_CONCURRENT_JOBS; job++ {
 		go codeProcessor.Worker(ctx, work)
 	}
@@ -91,7 +106,7 @@ func main() {
 	count := 0
 	for d := range codeProcessor.Device {
 		fmt.Printf("device: %d has identifier: %s and code: %s\n", count+1, d.Identifier, d.Code)
-		count += 1
+		count += 1 // count++
 		if count == CODE_REGISTRATION_LIMIT {
 			break
 		}

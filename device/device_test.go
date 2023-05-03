@@ -4,6 +4,9 @@ import (
 	"testing"
 )
 
+// there seems to be a lot of repetitions in this test
+// in most cases, parallel table driven tetst are easier to follow and quicker to execute
+// however, to test the resulting code, you could just use a nice regex pattern :)
 func TestCanGenerateValidCode(t *testing.T) {
 	allowedChars := []string{"A", "B", "C", "D", "E", "F", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
 	device := NewDevice()

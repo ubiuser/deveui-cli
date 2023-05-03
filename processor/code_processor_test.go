@@ -10,6 +10,8 @@ import (
 	"github.com/NickGowdy/deveui-cli/device"
 )
 
+// for mocking in tests I highly recommend using the github.com/stretchr/testify/mock package
+
 type MockClient struct {
 	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
 }

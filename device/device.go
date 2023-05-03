@@ -16,14 +16,15 @@ type Device struct {
 	Code       string
 }
 
-// Build new device with DevEUI identifier and code values.
-//
+// NewDevice build new device with DevEUI identifier and code values
 // # Example
 //
 //	1CEB0080F074F750 4F750
 func NewDevice() *Device {
 	hex, err := generateHexString()
 	if err != nil {
+		// this here will crash your whole program
+		// Instead, return an error and handle it at the place of call, possibly log it and generate a new device.
 		log.Fatal(err)
 	}
 
@@ -33,8 +34,7 @@ func NewDevice() *Device {
 	}
 }
 
-// Generate valid DevEUI identifier value.
-//
+// generateHexString generate valid DevEUI identifier value.
 // # Example
 //
 //	1CEB0080F074F750

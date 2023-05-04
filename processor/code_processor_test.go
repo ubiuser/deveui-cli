@@ -11,7 +11,7 @@ import (
 )
 
 type MockClient struct {
-	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
+	DoPost func(body io.Reader) (resp *http.Response, err error)
 }
 
 func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
@@ -29,7 +29,7 @@ const (
 
 func TestCanProcessCodes(t *testing.T) {
 	client := &MockClient{
-		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+		DoPost: func(body io.Reader) (resp *http.Response, err error) {
 			return &http.Response{}, nil
 		},
 	}

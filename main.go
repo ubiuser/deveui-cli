@@ -44,9 +44,8 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: time.Second * TIMEOUT,
 	}
-	loraWanClient := &client.LoraWanClient{
-		Client: httpClient,
-	}
+
+	loraWanClient := client.NewLoraWAN(httpClient)
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{

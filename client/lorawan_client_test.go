@@ -19,9 +19,7 @@ func TestLorawanClientHappyPath(t *testing.T) {
 		},
 	}
 
-	loraWanClient := LoraWanClient{
-		Client: mockClient,
-	}
+	loraWanClient := NewLoraWAN(mockClient)
 
 	b := new(bytes.Buffer)
 	reqBody := map[string]string{"Deveui": "Abcde"}

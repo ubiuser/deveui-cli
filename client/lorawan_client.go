@@ -12,16 +12,22 @@ type Client interface {
 }
 
 // Client used to communicate to LoRaWAN external system
-type LoraWanClient struct {
-	Client Client
+type LoraWAN struct {
+	client Client
+}
+
+func NewLoraWAN(client Client) *LoraWAN {
+	return &LoraWAN{
+		client: client,
+	}
 }
 
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
 // Send data via POST (HTTP) request
-func (h *LoraWanClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+func (l *LoraWAN) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
 	fullUrl := fmt.Sprintf("%s/%s", url, endpoint)
-	resp, err = h.Client.Post(fullUrl, contentType, body)
+	resp, err = l.client.Post(fullUrl, contentType, body)
 	if err != nil {
 		return nil, err
 	}

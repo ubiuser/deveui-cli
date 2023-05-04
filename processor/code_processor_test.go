@@ -3,7 +3,6 @@ package processor
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -23,6 +22,11 @@ func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp 
 		nil
 }
 
+const (
+	MAX_CONCURRENT_JOBS     = 2
+	CODE_REGISTRATION_LIMIT = 10
+)
+
 func TestCanProcessCodes(t *testing.T) {
 	client := &MockClient{
 		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
@@ -31,8 +35,8 @@ func TestCanProcessCodes(t *testing.T) {
 	}
 
 	codeProcessor := &CodeProcessor{
-		CodeRegistrationLimit: 10,
-		MaxConcurrentJobs:     10,
+		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
+		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               "http://www.mock-url.com",
 		Client:                client,
 		Device:                make(chan device.Device),
@@ -41,7 +45,7 @@ func TestCanProcessCodes(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	work := make(chan struct{}, 10)
+	work := make(chan struct{}, MAX_CONCURRENT_JOBS)
 
 	go func() {
 		for {
@@ -50,15 +54,35 @@ func TestCanProcessCodes(t *testing.T) {
 	}()
 
 	// Spawn workers
-	for j := 0; j < 10; j++ {
+	for j := 0; j < MAX_CONCURRENT_JOBS; j++ {
 		go codeProcessor.Worker(ctx, work)
 	}
 
 	n := 0
 	for d := range codeProcessor.Device {
-		fmt.Printf("device: %d has identifier: %s and code: %s\n", n+1, d.Identifier, d.Code)
+
+		if d.Code == "" {
+			t.Error("code should not be nil")
+		}
+
+		if d.Identifier == "" {
+			t.Error("identifier should not be nil")
+		}
+
+		if d.Identifier[len(d.Identifier)-5:] != d.Code {
+			t.Errorf("code should be last 5 characters of identifier, but is %s", d.Code)
+		}
+
+		if len(d.Identifier) != 16 {
+			t.Errorf("identifier should be exactly 16 characters, but is %d", len(d.Identifier))
+		}
+
+		if len(d.Code) != 5 {
+			t.Errorf("code should be exactly 5 characters, but is %d", len(d.Code))
+		}
+
 		n += 1
-		if n == 10 {
+		if n == CODE_REGISTRATION_LIMIT {
 			break
 		}
 	}

@@ -12,7 +12,7 @@ type MockClient struct {
 	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
 }
 
-func TestLorawanClientHappyPath(t *testing.T) {
+func TestLorawanHappyPath(t *testing.T) {
 	mockClient := &MockClient{
 		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
 			return &http.Response{}, nil

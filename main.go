@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,7 +18,7 @@ import (
 const (
 	MAX_CONCURRENT_JOBS     = /* Buffer limit for channel */ 10
 	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 100
-	TIMEOUT                 = /* Seconds */ 30
+	TIMEOUT                 = /* Milliseconds */ 30000
 )
 
 /*
@@ -40,19 +39,14 @@ func main() {
 	godotenv.Load(".env")
 	baseurl := os.Getenv("BASE_URL")
 
-	// setup client for requests
-	httpClient := &http.Client{
-		Timeout: time.Second * TIMEOUT,
-	}
-
-	loraWanClient := client.NewLoraWAN(httpClient)
+	loraWAN := client.NewLoraWAN(baseurl, TIMEOUT)
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               baseurl,
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
-		Client:                loraWanClient,
+		Client:                loraWAN,
 		Device:                make(chan device.Device),
 	}
 

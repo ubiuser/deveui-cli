@@ -14,7 +14,7 @@ type MockClient struct {
 	DoPost func(body io.Reader) (resp *http.Response, err error)
 }
 
-func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+func (m *MockClient) Post(body io.Reader) (resp *http.Response, err error) {
 	return &http.Response{
 			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(bytes.NewReader(nil)),

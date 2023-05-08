@@ -43,10 +43,10 @@ func main() {
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
+		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               baseurl,
-		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
-		Client:                loraWAN,
+		LoraWAN:               *loraWAN,
 		Device:                make(chan device.Device),
 	}
 

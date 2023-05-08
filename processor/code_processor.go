@@ -15,7 +15,7 @@ type CodeProcessor struct {
 	CodeRegistrationLimit int
 	MaxConcurrentJobs     int
 	BaseUrl               string
-	Client                client.Client
+	LoraWAN               client.LoraWAN
 	Device                chan device.Device
 }
 
@@ -33,7 +33,7 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-work:
-			saved, registeredDevice := registerDevice(cp.Client, cp.BaseUrl)
+			saved, registeredDevice := registerDevice(cp.LoraWAN)
 			if saved {
 				cp.Device <- *registeredDevice
 			}
@@ -41,7 +41,7 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 	}
 }
 
-func registerDevice(client client.Client, url string) (bool, *device.Device) {
+func registerDevice(loraWAN client.LoraWAN) (bool, *device.Device) {
 	device := device.NewDevice()
 
 	b := new(bytes.Buffer)
@@ -52,7 +52,7 @@ func registerDevice(client client.Client, url string) (bool, *device.Device) {
 		log.Print(err)
 	}
 
-	resp, err := client.Post(b)
+	resp, err := loraWAN.DoPost(&http.Client{}, b)
 
 	if err != nil {
 		log.Fatal(err)

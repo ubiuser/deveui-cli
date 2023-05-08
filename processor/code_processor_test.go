@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
+	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/device"
 )
 
@@ -28,18 +30,20 @@ const (
 )
 
 func TestCanProcessCodes(t *testing.T) {
-	client := &MockClient{
-		DoPost: func(body io.Reader) (resp *http.Response, err error) {
-			return &http.Response{}, nil
-		},
-	}
+	// client := &MockClient{
+	// 	DoPost: func(body io.Reader) (resp *http.Response, err error) {
+	// 		return &http.Response{}, nil
+	// 	},
+	// }
+
+	loraWAN := client.NewLoraWAN("http://www.mock-url.com", time.Microsecond*30000)
 
 	codeProcessor := &CodeProcessor{
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
 		BaseUrl:               "http://www.mock-url.com",
-		Client:                client,
 		Device:                make(chan device.Device),
+		LoraWAN:               *loraWAN,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

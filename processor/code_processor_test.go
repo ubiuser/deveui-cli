@@ -12,15 +12,7 @@ import (
 )
 
 type MockClient struct {
-	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
-}
-
-func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-	return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(bytes.NewReader(nil)),
-			Status:     "200 OK"},
-		nil
+	DoFunc func(*http.Request) (resp *http.Response, err error)
 }
 
 const (
@@ -30,7 +22,7 @@ const (
 
 func TestCanProcessCodes(t *testing.T) {
 	mockClient := &MockClient{
-		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+		DoFunc: func(*http.Request) (resp *http.Response, err error) {
 			return &http.Response{}, nil
 		},
 	}
@@ -88,4 +80,12 @@ func TestCanProcessCodes(t *testing.T) {
 			break
 		}
 	}
+}
+
+func (m *MockClient) Do(*http.Request) (resp *http.Response, err error) {
+	return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader(nil)),
+			Status:     "200 OK"},
+		nil
 }

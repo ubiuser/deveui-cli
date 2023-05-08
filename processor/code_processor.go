@@ -32,7 +32,7 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-work:
-			saved, registeredDevice := registerDevice(cp.LoraWAN)
+			saved, registeredDevice := registerDevice(cp.LoraWAN, ctx)
 			if saved {
 				cp.Device <- *registeredDevice
 			}
@@ -40,7 +40,7 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 	}
 }
 
-func registerDevice(loraWAN client.LoraWAN) (bool, *device.Device) {
+func registerDevice(loraWAN client.LoraWAN, ctx context.Context) (bool, *device.Device) {
 	device := device.NewDevice()
 
 	b := new(bytes.Buffer)
@@ -51,7 +51,7 @@ func registerDevice(loraWAN client.LoraWAN) (bool, *device.Device) {
 		log.Print(err)
 	}
 
-	resp, err := loraWAN.DoPost(b)
+	resp, err := loraWAN.DoPost(b, ctx)
 
 	if err != nil {
 		log.Fatal(err)

@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 
@@ -11,12 +12,12 @@ import (
 )
 
 type MockClient struct {
-	DoPost func(url string, contentType string, body io.Reader) (resp *http.Response, err error)
+	DoFunc func(*http.Request) (resp *http.Response, err error)
 }
 
 func TestLorawanClientHappyPath(t *testing.T) {
 	mockClient := &MockClient{
-		DoPost: func(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+		DoFunc: func(*http.Request) (resp *http.Response, err error) {
 			return &http.Response{}, nil
 		},
 	}
@@ -28,7 +29,13 @@ func TestLorawanClientHappyPath(t *testing.T) {
 
 	_ = json.NewEncoder(b).Encode(&reqBody)
 
-	resp, err := loraWAN.DoPost(b)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	if cancel == nil {
+		t.Errorf("cancel should not be nil but is: %v", cancel)
+	}
+
+	resp, err := loraWAN.DoPost(b, ctx)
 
 	if err != nil {
 		t.Errorf("err should be nil but is: %s", err.Error())
@@ -47,7 +54,7 @@ func TestLorawanClientHappyPath(t *testing.T) {
 	}
 }
 
-func (m *MockClient) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+func (m *MockClient) Do(*http.Request) (resp *http.Response, err error) {
 	b := new(bytes.Buffer)
 	reqBody := true
 

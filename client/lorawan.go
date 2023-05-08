@@ -1,13 +1,15 @@
 package client
 
 import (
+	"context"
 	"io"
+	"log"
 	"net/http"
 )
 
 // Client used to communicate to external services
 type Client interface {
-	Post(url string, contentType string, body io.Reader) (resp *http.Response, err error)
+	Do(*http.Request) (resp *http.Response, err error)
 }
 
 // LoraWAN used to communicate to LoRaWAN external system
@@ -26,9 +28,20 @@ func NewLoraWAN(baseURL string, client Client) *LoraWAN {
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
 // Send data via POST (HTTP) request
-func (l *LoraWAN) DoPost(body io.Reader) (resp *http.Response, err error) {
+func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Response, err error) {
 	fullUrl := l.baseURL + endpoint
-	resp, err = l.client.Post(fullUrl, "application/json", body)
+	req, err := http.NewRequest("POST", fullUrl, body)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err = l.client.Do(req)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	if err != nil {
 		return nil, err
 	}

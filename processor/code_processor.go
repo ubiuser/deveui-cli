@@ -14,7 +14,6 @@ import (
 type CodeProcessor struct {
 	CodeRegistrationLimit int
 	MaxConcurrentJobs     int
-	BaseUrl               string
 	LoraWAN               client.LoraWAN
 	Device                chan device.Device
 }
@@ -52,7 +51,7 @@ func registerDevice(loraWAN client.LoraWAN) (bool, *device.Device) {
 		log.Print(err)
 	}
 
-	resp, err := loraWAN.DoPost(&http.Client{}, b)
+	resp, err := loraWAN.DoPost(b)
 
 	if err != nil {
 		log.Fatal(err)

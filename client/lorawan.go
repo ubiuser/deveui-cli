@@ -3,8 +3,6 @@ package client
 import (
 	"io"
 	"net/http"
-	"path"
-	"time"
 )
 
 // Client used to communicate to external services
@@ -14,23 +12,23 @@ type Client interface {
 
 // LoraWAN used to communicate to LoRaWAN external system
 type LoraWAN struct {
-	timeout time.Duration
 	baseURL string
+	client  Client
 }
 
-func NewLoraWAN(baseURL string, timeout time.Duration) *LoraWAN {
+func NewLoraWAN(baseURL string, client Client) *LoraWAN {
 	return &LoraWAN{
 		baseURL: baseURL,
-		timeout: timeout,
+		client:  client,
 	}
 }
 
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
 // Send data via POST (HTTP) request
-func (l *LoraWAN) DoPost(client Client, body io.Reader) (resp *http.Response, err error) {
-	fullUrl := path.Join(l.baseURL, endpoint)
-	resp, err = client.Post(fullUrl, "application/json", body)
+func (l *LoraWAN) DoPost(body io.Reader) (resp *http.Response, err error) {
+	fullUrl := l.baseURL + endpoint
+	resp, err = l.client.Post(fullUrl, "application/json", body)
 	if err != nil {
 		return nil, err
 	}

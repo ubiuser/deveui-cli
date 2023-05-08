@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -39,13 +40,17 @@ func main() {
 	godotenv.Load(".env")
 	baseurl := os.Getenv("BASE_URL")
 
-	loraWAN := client.NewLoraWAN(baseurl, TIMEOUT)
+	// setup client for requests
+	httpClient := &http.Client{
+		Timeout: time.Second * TIMEOUT,
+	}
+
+	loraWAN := client.NewLoraWAN(baseurl, httpClient)
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
-		BaseUrl:               baseurl,
 		LoraWAN:               *loraWAN,
 		Device:                make(chan device.Device),
 	}

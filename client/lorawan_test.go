@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 )
 
 type MockClient struct {
@@ -22,14 +21,14 @@ func TestLorawanClientHappyPath(t *testing.T) {
 		},
 	}
 
-	loraWanClient := NewLoraWAN("www.example.com", time.Microsecond*30000)
+	loraWAN := NewLoraWAN("www.example.com", mockClient)
 
 	b := new(bytes.Buffer)
 	reqBody := map[string]string{"Deveui": "Abcde"}
 
 	_ = json.NewEncoder(b).Encode(&reqBody)
 
-	resp, err := loraWanClient.DoPost(mockClient, b)
+	resp, err := loraWAN.DoPost(b)
 
 	if err != nil {
 		t.Errorf("err should be nil but is: %s", err.Error())

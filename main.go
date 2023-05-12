@@ -49,11 +49,9 @@ func main() {
 		panic("error parsing TIMEOUT to int")
 	}
 
-	seconds := time.Second * time.Duration(timeout)
-
 	// setup client for requests
 	httpClient := &http.Client{
-		Timeout: seconds,
+		Timeout: time.Second * time.Duration(timeout),
 	}
 
 	loraWAN := client.NewLoraWAN(baseurl, httpClient)

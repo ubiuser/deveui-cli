@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"reflect"
+	"time"
 
 	"net/http"
 	"strings"
@@ -51,6 +53,41 @@ func TestLorawanClientHappyPath(t *testing.T) {
 
 	if strings.TrimSpace(val) != "true" {
 		t.Errorf("body should equal true but is: %d", body)
+	}
+}
+
+func TestNewLoraWanClient(t *testing.T) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	t.Parallel()
+	type args struct {
+		timeout time.Duration
+	}
+	tests := []struct {
+		name string
+		args args
+		want *LoraWAN
+	}{
+		{
+			name: "create-new-lorawan-client",
+			args: args{
+				timeout: 30,
+			},
+			want: &LoraWAN{
+				baseURL: "https://www.example.com",
+				client:  client,
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt // it is important to capture range variable
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel() // this makes sure that all cases from the table here are executed in parallel
+			if got := NewLoraWAN("https://www.example.com", client); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewLoraWanClient() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 

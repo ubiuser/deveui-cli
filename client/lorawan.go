@@ -27,7 +27,7 @@ func NewLoraWAN(baseURL string, client Client) *LoraWAN {
 
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
-// Send data via POST (HTTP) request
+// DoPost sends data via POST (HTTP) request
 func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Response, err error) {
 	fullUrl := l.baseURL + endpoint
 	req, err := http.NewRequest("POST", fullUrl, body)
@@ -39,7 +39,7 @@ func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Respon
 
 	resp, err = l.client.Do(req)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Printf("%v", err)
 	}
 
 	if err != nil {

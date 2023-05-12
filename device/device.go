@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	ALLOWED_CHARS  = "ABCDEF0123456789" // accepted chars used to make up DevEUI
-	DEV_EUI_LENGTH = 16                 // valid DevEUI is string of length 16
+	AllowedChars = "ABCDEF0123456789" // accepted chars used to make up DevEUI
+	DevEuiLength = 16                 // valid DevEUI is string of length 16
 )
 
 type Device struct {
@@ -16,7 +16,7 @@ type Device struct {
 	Code       string
 }
 
-// Build new device with DevEUI identifier and code values.
+// NewDevice Build a new device with DevEUI identifier and code values.
 //
 // # Example
 //
@@ -39,14 +39,14 @@ func NewDevice() *Device {
 //
 //	1CEB0080F074F750
 func generateHexString() (string, error) {
-	max := big.NewInt(int64(len(ALLOWED_CHARS)))
-	b := make([]byte, DEV_EUI_LENGTH)
+	max := big.NewInt(int64(len(AllowedChars)))
+	b := make([]byte, DevEuiLength)
 	for i := range b {
 		n, err := rand.Int(rand.Reader, max)
 		if err != nil {
 			return "", err
 		}
-		b[i] = ALLOWED_CHARS[n.Int64()]
+		b[i] = AllowedChars[n.Int64()]
 	}
 	return string(b), nil
 }

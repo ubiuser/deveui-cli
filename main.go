@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	MAX_CONCURRENT_JOBS     = /* Buffer limit for channel */ 10
-	CODE_REGISTRATION_LIMIT = /* Maximum number of devices that will be registered */ 100
-	TIMEOUT                 = /* Milliseconds */ 30000
+	MaxConcurrentJobs     = /* Buffer limit for channel */ 10
+	CodeRegistrationLimit = /* Maximum number of devices that will be registered */ 100
+	TIMEOUT               = /* Milliseconds */ 30000
 )
 
 /*
@@ -49,8 +49,8 @@ func main() {
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
-		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
-		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
+		CodeRegistrationLimit: CodeRegistrationLimit,
+		MaxConcurrentJobs:     MaxConcurrentJobs,
 		LoraWAN:               *loraWAN,
 		Device:                make(chan device.Device),
 	}
@@ -58,7 +58,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	work := make(chan struct{}, MAX_CONCURRENT_JOBS)
+	work := make(chan struct{}, MaxConcurrentJobs)
 	listener := make(chan os.Signal, 1)
 
 	// goroutine to listen for syscall.SIGINT
@@ -81,7 +81,7 @@ func main() {
 	}()
 
 	// Spawn workers
-	for job := 0; job < MAX_CONCURRENT_JOBS; job++ {
+	for job := 0; job < MaxConcurrentJobs; job++ {
 		go codeProcessor.Worker(ctx, work)
 	}
 
@@ -90,7 +90,7 @@ func main() {
 	for d := range codeProcessor.Device {
 		fmt.Printf("device: %d has identifier: %s and code: %s\n", count+1, d.Identifier, d.Code)
 		count += 1
-		if count == CODE_REGISTRATION_LIMIT {
+		if count == CodeRegistrationLimit {
 			break
 		}
 	}

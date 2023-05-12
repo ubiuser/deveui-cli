@@ -19,7 +19,7 @@ type CodeProcessor struct {
 }
 
 // Worker attempts to register a valid DevEUI via external LoRaWAN API.
-// If successfull, a RegisterDevice struct with it's Identifier and Code will be sent to the work channel.
+// If successful, a RegisterDevice struct with it's Identifier and Code will be sent to the work channel.
 //
 // # Example
 //

@@ -55,24 +55,27 @@ func TestCanProcessCodes(t *testing.T) {
 	n := 0
 	for d := range codeProcessor.Device {
 
-		if d.Code == "" {
+		identifier := d.GetIdentifier()
+		code := d.GetCode()
+
+		if code == "" {
 			t.Error("code should not be nil")
 		}
 
-		if d.Identifier == "" {
+		if identifier == "" {
 			t.Error("identifier should not be nil")
 		}
 
-		if d.Identifier[len(d.Identifier)-5:] != d.Code {
-			t.Errorf("code should be last 5 characters of identifier, but is %s", d.Code)
+		if identifier[len(identifier)-5:] != code {
+			t.Errorf("code should be last 5 characters of identifier, but is %s", code)
 		}
 
-		if len(d.Identifier) != 16 {
-			t.Errorf("identifier should be exactly 16 characters, but is %d", len(d.Identifier))
+		if len(identifier) != 16 {
+			t.Errorf("identifier should be exactly 16 characters, but is %d", len(identifier))
 		}
 
-		if len(d.Code) != 5 {
-			t.Errorf("code should be exactly 5 characters, but is %d", len(d.Code))
+		if len(code) != 5 {
+			t.Errorf("code should be exactly 5 characters, but is %d", len(code))
 		}
 
 		n += 1

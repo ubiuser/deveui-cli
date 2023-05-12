@@ -12,17 +12,20 @@ func TestCanGenerateValidCode(t *testing.T) {
 		t.Errorf("deivce should not be nil, but is %s", device)
 	}
 
-	if len(device.Code) != 5 {
-		t.Errorf("code should  be 5 characters long, but is %d", len(device.Code))
+	identifier := device.GetIdentifier()
+	code := device.GetCode()
+
+	if len(code) != 5 {
+		t.Errorf("code should  be 5 characters long, but is %d", len(code))
 	}
 
-	if device.Identifier[len(device.Identifier)-5:] != device.Code {
-		t.Errorf("code should be last 5 characters of identifier, but is %s", device.Code)
+	if identifier[len(identifier)-5:] != code {
+		t.Errorf("code should be last 5 characters of identifier, but is %s", code)
 	}
 
 	hasChar := false
 	for _, char := range allowedChars {
-		if char == string(device.Code[0]) {
+		if char == string(code[0]) {
 			hasChar = true
 		} else if hasChar {
 			break
@@ -30,12 +33,12 @@ func TestCanGenerateValidCode(t *testing.T) {
 	}
 
 	if hasChar == false {
-		t.Errorf("first char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(device.Code[0]))
+		t.Errorf("first char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[0]))
 	}
 
 	hasChar = false
 	for _, char := range allowedChars {
-		if char == string(device.Code[1]) {
+		if char == string(code[1]) {
 			hasChar = true
 		} else if hasChar {
 			break
@@ -43,12 +46,12 @@ func TestCanGenerateValidCode(t *testing.T) {
 	}
 
 	if hasChar == false {
-		t.Errorf("second char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(device.Code[1]))
+		t.Errorf("second char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[1]))
 	}
 
 	hasChar = false
 	for _, char := range allowedChars {
-		if char == string(device.Code[2]) {
+		if char == string(code[2]) {
 			hasChar = true
 		} else if hasChar {
 			break
@@ -56,12 +59,12 @@ func TestCanGenerateValidCode(t *testing.T) {
 	}
 
 	if hasChar == false {
-		t.Errorf("third char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(device.Code[2]))
+		t.Errorf("third char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[2]))
 	}
 
 	hasChar = false
 	for _, char := range allowedChars {
-		if char == string(device.Code[3]) {
+		if char == string(code[3]) {
 			hasChar = true
 		} else if hasChar {
 			break
@@ -69,12 +72,12 @@ func TestCanGenerateValidCode(t *testing.T) {
 	}
 
 	if hasChar == false {
-		t.Errorf("fourth char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(device.Code[3]))
+		t.Errorf("fourth char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[3]))
 	}
 
 	hasChar = false
 	for _, char := range allowedChars {
-		if char == string(device.Code[4]) {
+		if char == string(code[4]) {
 			hasChar = true
 		} else if hasChar {
 			break
@@ -82,6 +85,6 @@ func TestCanGenerateValidCode(t *testing.T) {
 	}
 
 	if hasChar == false {
-		t.Errorf("fifth char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(device.Code[4]))
+		t.Errorf("fifth char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[4]))
 	}
 }

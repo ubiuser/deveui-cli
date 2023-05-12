@@ -34,8 +34,12 @@ func NewDevice() *Device {
 	}
 }
 
-func (d Device) Get() string {
+func (d Device) GetIdentifier() string {
 	return d.identifier
+}
+
+func (d Device) GetCode() string {
+	return d.code
 }
 
 func (d Device) Print(number int) {

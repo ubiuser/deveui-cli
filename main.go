@@ -68,13 +68,16 @@ func main() {
 	defer cancel()
 
 	workCh := make(chan device.Device, maxConcurrentJobs)
+	doneCh := make(chan struct{})
+	count := 0
 
 	// Fill work buffer so we can start processing work
-	go func() {
-		for {
+	go func(count int) {
+		for count < 100 {
 			workCh <- device.Device{}
 		}
-	}()
+
+	}(count)
 
 	// Spawn workers
 	for job := 0; job < codeRegistrationLimit; job++ {
@@ -82,13 +85,13 @@ func main() {
 	}
 
 	// stdout any registered devices and increment until CODE_REGISTRATION_LIMIT is reached.
-	count := 0
+
 	for device := range codeProcessor.DeviceCh {
 		device.Print(count)
 		count++
 		if count == codeRegistrationLimit {
-			close(workCh)
 			break
 		}
 	}
+	close(doneCh)
 }

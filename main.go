@@ -3,23 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
+	"strconv"
 	"time"
 
 	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/device"
 	"github.com/NickGowdy/deveui-cli/processor"
 	"github.com/joho/godotenv"
-)
-
-const (
-	MaxConcurrentJobs     = /* Buffer limit for channel */ 10
-	CodeRegistrationLimit = /* Maximum number of devices that will be registered */ 100
-	TIMEOUT               = /* Milliseconds */ 30000
 )
 
 /*
@@ -37,20 +29,40 @@ Once this program starts, it will listen to syscall.SIGTERM, syscall.SIGINT via 
 This is to handle any unexpected terminations of the program and to resume processing DevEUIs.
 */
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		panic("error loading.env file")
+	}
 	godotenv.Load(".env")
 	baseurl := os.Getenv("BASE_URL")
 
+	maxConcurrentJobs, err := strconv.Atoi(os.Getenv("MAX_CONCURRENT_JOBS"))
+	if err != nil {
+		panic("error parsing MAX_CONCURRENT_JOBS to int")
+	}
+
+	codeRegistrationLimit, err := strconv.Atoi(os.Getenv("CODE_REGISTRATION_LIMIT"))
+	if err != nil {
+		panic("error parsing CODE_REGISTRATION_LIMIT to int")
+	}
+
+	timeout, err := strconv.Atoi(os.Getenv("TIMEOUT"))
+	if err != nil {
+		panic("error parsing TIMEOUT to int")
+	}
+
+	seconds := time.Second * time.Duration(timeout)
+
 	// setup client for requests
 	httpClient := &http.Client{
-		Timeout: time.Second * TIMEOUT,
+		Timeout: seconds,
 	}
 
 	loraWAN := client.NewLoraWAN(baseurl, httpClient)
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
-		CodeRegistrationLimit: CodeRegistrationLimit,
-		MaxConcurrentJobs:     MaxConcurrentJobs,
+		CodeRegistrationLimit: codeRegistrationLimit,
+		MaxConcurrentJobs:     maxConcurrentJobs,
 		LoraWAN:               *loraWAN,
 		Device:                make(chan device.Device),
 	}
@@ -58,20 +70,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	work := make(chan struct{}, MaxConcurrentJobs)
-	listener := make(chan os.Signal, 1)
-
-	// goroutine to listen for syscall.SIGINT
-	go func() {
-		signal.Notify(listener, syscall.SIGINT)
-		go func() {
-			for {
-				time.Sleep(1000)
-			}
-		}()
-		sig := <-listener
-		log.Printf("Caught signal %v", sig)
-	}()
+	work := make(chan struct{}, maxConcurrentJobs)
 
 	// Fill work buffer so we can start processing work
 	go func() {
@@ -81,7 +80,7 @@ func main() {
 	}()
 
 	// Spawn workers
-	for job := 0; job < MaxConcurrentJobs; job++ {
+	for job := 0; job < maxConcurrentJobs; job++ {
 		go codeProcessor.Worker(ctx, work)
 	}
 
@@ -90,7 +89,7 @@ func main() {
 	for d := range codeProcessor.Device {
 		fmt.Printf("device: %d has identifier: %s and code: %s\n", count+1, d.Identifier, d.Code)
 		count += 1
-		if count == CodeRegistrationLimit {
+		if count == codeRegistrationLimit {
 			break
 		}
 	}

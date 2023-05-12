@@ -62,6 +62,7 @@ func main() {
 		MaxConcurrentJobs:     maxConcurrentJobs,
 		LoraWAN:               *loraWAN,
 		DeviceCh:              make(chan device.Device, maxConcurrentJobs),
+		DoneCh:                make(chan struct{}),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -76,12 +77,12 @@ func main() {
 		for count < 100 {
 			workCh <- device.Device{}
 		}
-
+		return
 	}(count)
 
 	// Spawn workers
 	for job := 0; job < codeRegistrationLimit; job++ {
-		go codeProcessor.Worker(ctx, workCh)
+		go codeProcessor.Worker(ctx, workCh, doneCh)
 	}
 
 	// stdout any registered devices and increment until CODE_REGISTRATION_LIMIT is reached.

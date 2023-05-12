@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/NickGowdy/deveui-cli/client"
@@ -16,6 +17,7 @@ type CodeProcessor struct {
 	MaxConcurrentJobs     int
 	LoraWAN               client.LoraWAN
 	DeviceCh              chan device.Device
+	DoneCh                chan struct{}
 }
 
 // Worker attempts to register a valid DevEUI via external LoRaWAN API.
@@ -26,18 +28,21 @@ type CodeProcessor struct {
 //	Identifier: 1CEB0080F074F750, Code: 4F750
 //
 // When an unexpected error occurs, return ctx.Err instead.
-func (cp *CodeProcessor) Worker(ctx context.Context, work chan device.Device) error {
+func (cp *CodeProcessor) Worker(ctx context.Context, workCh chan device.Device, doneCh chan struct{}) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-work:
+		case <-workCh:
 			registeredDevice, err := registerDevice(cp.LoraWAN, ctx)
 			if err == nil {
 				cp.DeviceCh <- *registeredDevice
 			} else {
 				return err
 			}
+		case <-doneCh:
+			fmt.Printf("Done \n")
+			return nil
 		}
 	}
 }

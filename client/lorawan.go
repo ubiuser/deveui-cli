@@ -29,12 +29,10 @@ const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via L
 // DoPost sends data via POST (HTTP) request
 func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Response, err error) {
 	fullUrl := l.baseURL + endpoint
-	req, err := http.NewRequest("POST", fullUrl, body)
+	req, err := http.NewRequestWithContext(ctx, "POST", fullUrl, body)
 	if err != nil {
 		return nil, err
 	}
-
-	req = req.WithContext(ctx)
 
 	resp, err = l.client.Do(req)
 	if err != nil {

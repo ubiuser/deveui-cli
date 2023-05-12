@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -32,14 +31,14 @@ func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Respon
 	fullUrl := l.baseURL + endpoint
 	req, err := http.NewRequest("POST", fullUrl, body)
 	if err != nil {
-		log.Fatalf("%v", err)
+		return nil, err
 	}
 
 	req = req.WithContext(ctx)
 
 	resp, err = l.client.Do(req)
 	if err != nil {
-		log.Printf("%v", err)
+		return nil, err
 	}
 
 	if err != nil {

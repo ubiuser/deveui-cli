@@ -85,9 +85,9 @@ func main() {
 
 	// stdout any registered devices and increment until CODE_REGISTRATION_LIMIT is reached.
 	count := 0
-	for d := range codeProcessor.Device {
-		d.Print(count)
-		count += 1
+	for device := range codeProcessor.Device {
+		device.Print(count)
+		count++
 		if count == codeRegistrationLimit {
 			break
 		}

@@ -61,7 +61,7 @@ func main() {
 		CodeRegistrationLimit: 1,
 		MaxConcurrentJobs:     maxConcurrentJobs,
 		LoraWAN:               *loraWAN,
-		DeviceCh:              make(chan device.Device),
+		DeviceCh:              make(chan device.Device, maxConcurrentJobs),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

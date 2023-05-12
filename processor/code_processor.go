@@ -15,7 +15,7 @@ type CodeProcessor struct {
 	CodeRegistrationLimit int
 	MaxConcurrentJobs     int
 	LoraWAN               client.LoraWAN
-	Device                chan device.Device
+	DeviceCh              chan device.Device
 }
 
 // Worker attempts to register a valid DevEUI via external LoRaWAN API.
@@ -26,7 +26,7 @@ type CodeProcessor struct {
 //	Identifier: 1CEB0080F074F750, Code: 4F750
 //
 // When an unexpected error occurs, return ctx.Err instead.
-func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
+func (cp *CodeProcessor) Worker(ctx context.Context, work chan device.Device) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -34,7 +34,7 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 		case <-work:
 			registeredDevice, err := registerDevice(cp.LoraWAN, ctx)
 			if err == nil {
-				cp.Device <- *registeredDevice
+				cp.DeviceCh <- *registeredDevice
 			} else {
 				return err
 			}

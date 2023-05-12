@@ -32,7 +32,7 @@ func TestCanProcessCodes(t *testing.T) {
 	codeProcessor := &CodeProcessor{
 		CodeRegistrationLimit: CODE_REGISTRATION_LIMIT,
 		MaxConcurrentJobs:     MAX_CONCURRENT_JOBS,
-		Device:                make(chan device.Device),
+		DeviceCh:              make(chan device.Device),
 		LoraWAN:               *loraWAN,
 	}
 
@@ -53,7 +53,7 @@ func TestCanProcessCodes(t *testing.T) {
 	}
 
 	n := 0
-	for d := range codeProcessor.Device {
+	for d := range codeProcessor.DeviceCh {
 
 		identifier := d.GetIdentifier()
 		code := d.GetCode()

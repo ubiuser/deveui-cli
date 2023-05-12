@@ -2,6 +2,7 @@ package device
 
 import (
 	"crypto/rand"
+	"fmt"
 	"log"
 	"math/big"
 )
@@ -12,8 +13,8 @@ const (
 )
 
 type Device struct {
-	Identifier string
-	Code       string
+	identifier string
+	code       string
 }
 
 // NewDevice Build a new device with DevEUI identifier and code values.
@@ -28,9 +29,17 @@ func NewDevice() *Device {
 	}
 
 	return &Device{
-		Identifier: hex,
-		Code:       hex[len(hex)-5:],
+		identifier: hex,
+		code:       hex[len(hex)-5:],
 	}
+}
+
+func (d Device) Get() string {
+	return d.identifier
+}
+
+func (d Device) Print(number int) {
+	fmt.Printf("device: %d has identifier: %s and code: %s\n", number+1, d.identifier, d.code)
 }
 
 // Generate valid DevEUI identifier value.

@@ -44,9 +44,10 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 
 func registerDevice(loraWAN client.LoraWAN, ctx context.Context) (*device.Device, error) {
 	device := device.NewDevice()
+	identifier := device.Get()
 
 	b := new(bytes.Buffer)
-	reqBody := map[string]string{"Deveui": device.Identifier}
+	reqBody := map[string]string{"Deveui": identifier}
 
 	err := json.NewEncoder(b).Encode(&reqBody)
 	if err != nil {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -87,7 +86,7 @@ func main() {
 	// stdout any registered devices and increment until CODE_REGISTRATION_LIMIT is reached.
 	count := 0
 	for d := range codeProcessor.Device {
-		fmt.Printf("device: %d has identifier: %s and code: %s\n", count+1, d.Identifier, d.Code)
+		d.Print(count)
 		count += 1
 		if count == codeRegistrationLimit {
 			break

@@ -77,7 +77,7 @@ func main() {
 	}()
 
 	// Spawn workers
-	for job := 0; job < maxConcurrentJobs; job++ {
+	for job := 0; job < codeRegistrationLimit; job++ {
 		go codeProcessor.Worker(ctx, work)
 	}
 

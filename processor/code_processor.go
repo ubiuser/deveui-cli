@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
 
 	"github.com/NickGowdy/deveui-cli/client"
@@ -19,7 +19,7 @@ type CodeProcessor struct {
 }
 
 // Worker attempts to register a valid DevEUI via external LoRaWAN API.
-// If successful, a RegisterDevice struct with it's Identifier and Code will be sent to the work channel.
+// If successful, a RegisterDevice struct with its Identifier and Code will be sent to the work channel.
 //
 // # Example
 //
@@ -32,15 +32,17 @@ func (cp *CodeProcessor) Worker(ctx context.Context, work chan struct{}) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-work:
-			saved, registeredDevice := registerDevice(cp.LoraWAN, ctx)
-			if saved {
+			registeredDevice, err := registerDevice(cp.LoraWAN, ctx)
+			if err == nil {
 				cp.Device <- *registeredDevice
+			} else {
+				return err
 			}
 		}
 	}
 }
 
-func registerDevice(loraWAN client.LoraWAN, ctx context.Context) (bool, *device.Device) {
+func registerDevice(loraWAN client.LoraWAN, ctx context.Context) (*device.Device, error) {
 	device := device.NewDevice()
 
 	b := new(bytes.Buffer)
@@ -48,20 +50,19 @@ func registerDevice(loraWAN client.LoraWAN, ctx context.Context) (bool, *device.
 
 	err := json.NewEncoder(b).Encode(&reqBody)
 	if err != nil {
-		log.Print(err)
+		return nil, err
 	}
 
 	resp, err := loraWAN.DoPost(b, ctx)
-
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		return true, device
+		return device, nil
 	} else {
-		return false, nil
+		return nil, errors.New(resp.Status)
 	}
 }

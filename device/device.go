@@ -42,8 +42,8 @@ func (d Device) GetCode() string {
 	return d.code
 }
 
-func (d Device) Print(number int) {
-	fmt.Printf("device: %d has identifier: %s and code: %s\n", number+1, d.identifier, d.code)
+func (d Device) Print() {
+	fmt.Printf("device has identifier: %s and code: %s\n", d.identifier, d.code)
 }
 
 // Generate valid DevEUI identifier value.

@@ -30,8 +30,8 @@ func NewLoraWAN(baseURL string, client Client) *LoraWAN {
 
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
-// Send registers new device using LoraWAN external service
-func (l *LoraWAN) Send(ctx context.Context) (*device.Device, error) {
+// RegisterDevice registers new device using LoraWAN external service
+func (l *LoraWAN) RegisterDevice(ctx context.Context) (*device.Device, error) {
 	device := device.NewDevice()
 	identifier := device.GetIdentifier()
 	b := new(bytes.Buffer)

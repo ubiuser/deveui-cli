@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/NickGowdy/deveui-cli/client"
-	"github.com/NickGowdy/deveui-cli/device"
 	"github.com/NickGowdy/deveui-cli/processor"
 	"github.com/joho/godotenv"
 )
@@ -31,7 +30,7 @@ func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		panic("error loading.env file")
 	}
-	godotenv.Load(".env")
+
 	baseurl := os.Getenv("BASE_URL")
 
 	maxConcurrentJobs, err := strconv.Atoi(os.Getenv("MAX_CONCURRENT_JOBS"))
@@ -58,38 +57,12 @@ func main() {
 
 	// setup processor to do work
 	codeProcessor := &processor.CodeProcessor{
-		CodeRegistrationLimit: 1,
+		CodeRegistrationLimit: codeRegistrationLimit,
 		MaxConcurrentJobs:     maxConcurrentJobs,
 		LoraWAN:               *loraWAN,
-		DeviceCh:              make(chan device.Device, maxConcurrentJobs),
-		DoneCh:                make(chan struct{}),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	workCh := make(chan device.Device, maxConcurrentJobs)
-	count := 0
-
-	// Fill work buffer so we can start processing work
-	go func(count int) {
-		for count < 100 {
-			workCh <- device.Device{}
-		}
-		return
-	}(count)
-
-	// Spawn workers
-	for job := 0; job < codeRegistrationLimit; job++ {
-		go codeProcessor.Worker(ctx, workCh)
-	}
-
-	// stdout any registered devices and increment until CODE_REGISTRATION_LIMIT is reached.
-	for device := range codeProcessor.DeviceCh {
-		device.Print(count)
-		count++
-		if count == codeRegistrationLimit {
-			break
-		}
-	}
+	codeProcessor.Start(ctx, cancel)
 }

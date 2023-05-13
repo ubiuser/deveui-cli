@@ -52,17 +52,15 @@ func main() {
 	httpClient := &http.Client{
 		Timeout: time.Second * time.Duration(timeout),
 	}
-
 	loraWAN := client.NewLoraWAN(baseurl, httpClient)
 
 	// setup processor to do work
-	codeProcessor := &processor.CodeProcessor{
+	processor := &processor.Processor{
 		CodeRegistrationLimit: codeRegistrationLimit,
 		MaxConcurrentJobs:     maxConcurrentJobs,
 		LoraWAN:               *loraWAN,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	codeProcessor.Start(ctx, cancel)
+	processor.Start(ctx, cancel)
 }

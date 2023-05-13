@@ -1,9 +1,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
-	"io"
+	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/NickGowdy/deveui-cli/device"
 )
 
 // Client used to communicate to external services
@@ -26,15 +30,25 @@ func NewLoraWAN(baseURL string, client Client) *LoraWAN {
 
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
-// DoPost sends data via POST (HTTP) request
-func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Response, err error) {
+// Send registers new device using LoraWAN external service
+func (l *LoraWAN) Send(ctx context.Context) (*device.Device, error) {
+	device := device.NewDevice()
+	identifier := device.GetIdentifier()
+	b := new(bytes.Buffer)
+	reqBody := map[string]string{"Deveui": identifier}
+
+	err := json.NewEncoder(b).Encode(&reqBody)
+	if err != nil {
+		return nil, err
+	}
+
 	fullUrl := l.baseURL + endpoint
-	req, err := http.NewRequestWithContext(ctx, "POST", fullUrl, body)
+	req, err := http.NewRequestWithContext(ctx, "POST", fullUrl, b)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err = l.client.Do(req)
+	resp, err := l.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -43,5 +57,11 @@ func (l *LoraWAN) DoPost(body io.Reader, ctx context.Context) (resp *http.Respon
 		return nil, err
 	}
 
-	return resp, nil
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		return device, nil
+	} else {
+		return nil, errors.New(resp.Status)
+	}
 }

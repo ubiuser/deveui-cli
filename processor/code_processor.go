@@ -1,12 +1,7 @@
 package processor
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"net/http"
 
 	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/device"
@@ -28,47 +23,19 @@ type CodeProcessor struct {
 //	Identifier: 1CEB0080F074F750, Code: 4F750
 //
 // When an unexpected error occurs, return ctx.Err instead.
-func (cp *CodeProcessor) Worker(ctx context.Context, workCh chan device.Device, doneCh chan struct{}) error {
+func (cp *CodeProcessor) Worker(ctx context.Context, workCh chan device.Device) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-workCh:
-			registeredDevice, err := registerDevice(cp.LoraWAN, ctx)
+			registeredDevice, err := cp.LoraWAN.Send(ctx)
 			if err == nil {
 				cp.DeviceCh <- *registeredDevice
+
 			} else {
 				return err
 			}
-		case <-doneCh:
-			fmt.Printf("Done \n")
-			return nil
 		}
-	}
-}
-
-func registerDevice(loraWAN client.LoraWAN, ctx context.Context) (*device.Device, error) {
-	device := device.NewDevice()
-	identifier := device.GetIdentifier()
-
-	b := new(bytes.Buffer)
-	reqBody := map[string]string{"Deveui": identifier}
-
-	err := json.NewEncoder(b).Encode(&reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := loraWAN.DoPost(b, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return device, nil
-	} else {
-		return nil, errors.New(resp.Status)
 	}
 }

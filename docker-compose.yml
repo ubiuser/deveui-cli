@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  app_docker:
+    build:
+      context: .
+      dockerfile: dockerfile
+    volumes:
+      - ${GOPATH}/pkg/mod:/go/pkg/mod
+
+  app_local:
+    image: golang:1.20
+    volumes:
+      - .:/code
+      - ${GOPATH}/pkg/mod:/go/pkg/mod
+    working_dir: /code
+    command: go run main.go
+
+  golangci:
+    image: golangci/golangci-lint:latest-alpine
+    volumes:
+      - .:/code
+    working_dir: /code
+    command: golangci-lint run -v

@@ -1,20 +1,15 @@
-FROM golang:1.19-alpine
-
-RUN apk add --no-cache git
-
-# Set the Current Working Directory inside the container
-WORKDIR /app/deveui-cli
-
-# We want to populate the module cache based on the go.{mod,sum} files.
-COPY go.mod .
-
+FROM golang:1.20-alpine as base
+WORKDIR /app
+COPY go.* ./
 RUN go mod download
+COPY . ./
 
-COPY . .
+FROM base AS go-builder
+ENV CGO_ENABLED=0 \
+  GOOS=linux \
+  GOARCH=amd64
+RUN go build -ldflags "-w -s" -o "./deveui-cli" main.go
 
-# Build the Go app
-RUN go build -o ./deveui-cli .
-
-
-# Run the binary program produced by `go install`
-ENTRYPOINT ["./deveui-cli"]
+FROM scratch AS production
+COPY --from=go-builder /app/deveui-cli /bin/
+ENTRYPOINT ["/bin/deveui-cli"]

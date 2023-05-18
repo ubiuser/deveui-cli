@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/NickGowdy/deveui-cli/client"
@@ -23,10 +22,10 @@ func main() {
 		panic("failed to process env vars: " + err.Error())
 	}
 
-	httpClient := &http.Client{
-		Timeout: cfg.Timeout,
+	loraWAN, err := client.NewLoraWAN(cfg.BaseURL, cfg.Timeout)
+	if err != nil {
+		panic("failed to create loraWAN client: " + err.Error())
 	}
-	loraWAN := client.NewLoraWAN(cfg.BaseURL, httpClient)
 
 	proc := &processor.Processor{
 		CodeRegistrationLimit: cfg.CodeRegistrationLimit,

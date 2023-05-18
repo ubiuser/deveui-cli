@@ -1,95 +1,125 @@
 package client
 
 import (
+	"context"
+	"encoding/json"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/NickGowdy/deveui-cli/device"
 )
 
-type MockClient struct {
-	DoFunc func(*http.Request) (resp *http.Response, err error)
+func TestLoraWAN_RegisterDevice_Request(t *testing.T) {
+	t.Parallel()
+
+	const timeout = 10 * time.Second
+
+	t.Run("server-side-checks", func(t *testing.T) {
+		t.Parallel()
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, endpoint, r.URL.Path)
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+			data, err := io.ReadAll(r.Body)
+			defer r.Body.Close()
+			require.NoError(t, err)
+			var body struct {
+				Deveui string `json:"deveui"`
+			}
+			err = json.Unmarshal(data, &body)
+			require.NoError(t, err)
+			assert.NotEmpty(t, body.Deveui)
+
+			w.WriteHeader(http.StatusCreated)
+		}))
+		defer ts.Close()
+
+		client, err := NewLoraWAN(ts.URL, timeout)
+		require.NoError(t, err)
+
+		_, err = client.RegisterDevice(context.Background())
+		assert.NoError(t, err)
+	})
 }
 
-// func TestLorawanClientHappyPath(t *testing.T) {
-// 	mockClient := &MockClient{
-// 		DoFunc: func(*http.Request) (resp *http.Response, err error) {
-// 			return &http.Response{}, nil
-// 		},
-// 	}
+func TestLoraWAN_RegisterDevice(t *testing.T) {
+	t.Parallel()
+	type fields struct {
+		handler func(w http.ResponseWriter, r *http.Request)
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    *device.Device
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "error-status-code",
+			fields: fields{
+				handler: func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnprocessableEntity)
+				},
+			},
+			want: nil,
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(t, err, "request failed")
+			},
+		},
+		{
+			name: "ok-status-code",
+			fields: fields{
+				handler: func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				},
+			},
+			want: &device.Device{},
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.NoError(t, err)
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-// 	loraWAN := NewLoraWAN("www.example.com", mockClient)
+			r := chi.NewRouter()
+			r.Post(endpoint, tt.fields.handler)
+			ts := httptest.NewServer(r)
+			defer ts.Close()
 
-// 	b := new(bytes.Buffer)
-// 	reqBody := map[string]string{"Deveui": "Abcde"}
+			tsPath, err := url.JoinPath(ts.URL, endpoint)
+			require.NoError(t, err)
 
-// 	_ = json.NewEncoder(b).Encode(&reqBody)
+			tsURL, err := url.Parse(tsPath)
+			require.NoError(t, err)
 
-// 	ctx, cancel := context.WithCancel(context.Background())
+			l := &LoraWAN{
+				fullURL: tsURL,
+				client:  ts.Client(),
+			}
+			got, err := l.RegisterDevice(context.Background())
+			if !tt.wantErr(t, err, "RegisterDevice()") {
+				return
+			}
 
-// 	if cancel == nil {
-// 		t.Errorf("cancel should not be nil but is: %v", cancel)
-// 	}
-
-// 	resp, err := loraWAN.DoPost(b, ctx)
-
-// 	if err != nil {
-// 		t.Errorf("err should be nil but is: %s", err.Error())
-// 	}
-// 	defer resp.Body.Close()
-
-// 	if resp.StatusCode != 200 {
-// 		t.Errorf("resp should be nil but is: %d", resp.StatusCode)
-// 	}
-
-// 	body, _ := io.ReadAll(resp.Body)
-// 	val := string(body)
-
-// 	if strings.TrimSpace(val) != "true" {
-// 		t.Errorf("body should equal true but is: %d", body)
-// 	}
-// }
-
-// func TestNewLoraWanClient(t *testing.T) {
-// 	client := &http.Client{
-// 		Timeout: 30 * time.Second,
-// 	}
-// 	t.Parallel()
-// 	type args struct {
-// 		timeout time.Duration
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 		want *LoraWAN
-// 	}{
-// 		{
-// 			name: "create-new-lorawan-client",
-// 			args: args{
-// 				timeout: 30,
-// 			},
-// 			want: &LoraWAN{
-// 				baseURL: "https://www.example.com",
-// 				client:  client,
-// 			},
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		tt := tt // it is important to capture range variable
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			t.Parallel() // this makes sure that all cases from the table here are executed in parallel
-// 			if got := NewLoraWAN("https://www.example.com", client); !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("NewLoraWanClient() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
-
-// func (m *MockClient) Do(*http.Request) (resp *http.Response, err error) {
-// 	b := new(bytes.Buffer)
-// 	reqBody := true
-
-// 	_ = json.NewEncoder(b).Encode(&reqBody)
-// 	return &http.Response{
-// 			StatusCode: http.StatusOK,
-// 			Body:       io.NopCloser(b),
-// 			Status:     "200 OK"},
-// 		nil
-// }
+			// returned device has random field values, so we just check if what we got is not nil
+			if tt.want != nil {
+				assert.NotNil(t, got)
+			} else {
+				assert.Nil(t, got)
+			}
+		})
+	}
+}

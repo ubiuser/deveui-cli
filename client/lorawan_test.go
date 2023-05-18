@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +19,63 @@ import (
 	"github.com/NickGowdy/deveui-cli/device"
 )
 
+func TestNewLoraWAN(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		baseURL string
+		timeout time.Duration
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *LoraWAN
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "invalid-base-url",
+			args: args{
+				baseURL: ":invalid",
+			},
+			want: nil,
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(t, err, "failed to join url")
+			},
+		},
+		{
+			name: "ok",
+			args: args{
+				baseURL: "base",
+				timeout: 1 * time.Second,
+			},
+			want: &LoraWAN{
+				fullURL: func() *url.URL {
+					u, err := url.Parse(fmt.Sprintf("%s%s", "base", endpoint))
+					require.NoError(t, err)
+
+					return u
+				}(),
+				client: &http.Client{
+					Timeout: 1 * time.Second,
+				},
+			},
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.NoError(t, err)
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := NewLoraWAN(tt.args.baseURL, tt.args.timeout)
+			if !tt.wantErr(t, err, fmt.Sprintf("NewLoraWAN(%v, %v)", tt.args.baseURL, tt.args.timeout)) {
+				return
+			}
+			assert.EqualValues(t, tt.want, got)
+		})
+	}
+}
+
 func TestLoraWAN_RegisterDevice_Request(t *testing.T) {
 	t.Parallel()
 
@@ -25,6 +83,8 @@ func TestLoraWAN_RegisterDevice_Request(t *testing.T) {
 
 	t.Run("server-side-checks", func(t *testing.T) {
 		t.Parallel()
+
+		newDevice := device.NewDevice()
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
@@ -39,7 +99,7 @@ func TestLoraWAN_RegisterDevice_Request(t *testing.T) {
 			}
 			err = json.Unmarshal(data, &body)
 			require.NoError(t, err)
-			assert.NotEmpty(t, body.Deveui)
+			assert.Equal(t, newDevice.GetIdentifier(), body.Deveui)
 
 			w.WriteHeader(http.StatusCreated)
 		}))
@@ -48,7 +108,7 @@ func TestLoraWAN_RegisterDevice_Request(t *testing.T) {
 		client, err := NewLoraWAN(ts.URL, timeout)
 		require.NoError(t, err)
 
-		_, err = client.RegisterDevice(context.Background())
+		err = client.RegisterDevice(context.Background(), newDevice)
 		assert.NoError(t, err)
 	})
 }
@@ -109,17 +169,8 @@ func TestLoraWAN_RegisterDevice(t *testing.T) {
 				fullURL: tsURL,
 				client:  ts.Client(),
 			}
-			got, err := l.RegisterDevice(context.Background())
-			if !tt.wantErr(t, err, "RegisterDevice()") {
-				return
-			}
 
-			// returned device has random field values, so we just check if what we got is not nil
-			if tt.want != nil {
-				assert.NotNil(t, got)
-			} else {
-				assert.Nil(t, got)
-			}
+			tt.wantErr(t, l.RegisterDevice(context.Background(), &device.Device{}), "RegisterDevice()")
 		})
 	}
 }

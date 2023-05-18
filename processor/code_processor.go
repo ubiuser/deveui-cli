@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/NickGowdy/deveui-cli/client"
+	"github.com/NickGowdy/deveui-cli/device"
 )
 
 type Processor struct {
@@ -18,11 +19,11 @@ func (p *Processor) Start(ctx context.Context, cancel context.CancelFunc) {
 	count := 0
 
 	for count < p.CodeRegistrationLimit {
-		device, err := p.LoraWAN.RegisterDevice(ctx)
-		if err != nil {
+		newDevice := device.NewDevice()
+		if err := p.LoraWAN.RegisterDevice(ctx, newDevice); err != nil {
 			log.Print(err)
 		} else {
-			device.Print()
+			newDevice.Print()
 			count++
 		}
 	}

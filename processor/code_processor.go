@@ -4,14 +4,28 @@ import (
 	"context"
 	"log"
 
-	"github.com/NickGowdy/deveui-cli/client"
 	"github.com/NickGowdy/deveui-cli/device"
 )
 
-type Processor struct {
-	CodeRegistrationLimit int
-	MaxConcurrentJobs     int
-	LoraWAN               client.LoraWAN
+type (
+	// Client is the client interface the processor expects
+	Client interface {
+		RegisterDevice(ctx context.Context, newDevice *device.Device) error
+	}
+
+	Processor struct {
+		codeRegistrationLimit int
+		maxConcurrentJobs     int
+		client                Client
+	}
+)
+
+func New(codeRegistrationLimit int, maxConcurrentJobs int, client Client) *Processor {
+	return &Processor{
+		codeRegistrationLimit: codeRegistrationLimit,
+		maxConcurrentJobs:     maxConcurrentJobs,
+		client:                client,
+	}
 }
 
 func (p *Processor) Start(ctx context.Context, cancel context.CancelFunc) {

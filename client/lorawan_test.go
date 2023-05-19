@@ -84,7 +84,8 @@ func TestLoraWAN_RegisterDevice_Request(t *testing.T) {
 	t.Run("server-side-checks", func(t *testing.T) {
 		t.Parallel()
 
-		newDevice := device.NewDevice()
+		newDevice, err := device.NewDevice()
+		require.NoError(t, err)
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)

@@ -18,14 +18,20 @@ func (p *Processor) Start(ctx context.Context, cancel context.CancelFunc) {
 	// workCh := make(chan struct{})
 	count := 0
 
-	for count < p.CodeRegistrationLimit {
-		newDevice := device.NewDevice()
-		if err := p.LoraWAN.RegisterDevice(ctx, newDevice); err != nil {
-			log.Print(err)
-		} else {
-			newDevice.Print()
-			count++
+	for count < p.codeRegistrationLimit {
+		newDevice, err := device.NewDevice()
+		if err != nil {
+			log.Printf("failed to create new device: %v\n", err)
+			continue
 		}
+
+		if err = p.client.RegisterDevice(ctx, newDevice); err != nil {
+			log.Printf("failed to register device: %v\n", err)
+			continue
+		}
+
+		log.Println(newDevice)
+		count++
 	}
 
 	// go func(ctx context.Context) {

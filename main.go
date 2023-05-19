@@ -17,22 +17,28 @@ type config struct {
 }
 
 func main() {
+	cfg := mustReadConfig()
+	loraWAN := mustCreateClient(cfg.BaseURL, cfg.Timeout)
+	proc := processor.New(cfg.CodeRegistrationLimit, cfg.MaxConcurrent, loraWAN)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	proc.Start(ctx, cancel)
+}
+
+func mustReadConfig() config {
 	var cfg config
 	if err := envconfig.Process("", &cfg); err != nil {
 		panic("failed to process env vars: " + err.Error())
 	}
 
-	loraWAN, err := client.NewLoraWAN(cfg.BaseURL, cfg.Timeout)
+	return cfg
+}
+
+func mustCreateClient(baseURL string, timeout time.Duration) *client.LoraWAN {
+	loraWAN, err := client.NewLoraWAN(baseURL, timeout)
 	if err != nil {
 		panic("failed to create loraWAN client: " + err.Error())
 	}
 
-	proc := &processor.Processor{
-		CodeRegistrationLimit: cfg.CodeRegistrationLimit,
-		MaxConcurrentJobs:     cfg.MaxConcurrent,
-		LoraWAN:               *loraWAN,
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	proc.Start(ctx, cancel)
+	return loraWAN
 }

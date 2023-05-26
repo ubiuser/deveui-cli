@@ -4,64 +4,67 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/NickGowdy/deveui-cli/device"
 )
 
-// Client used to communicate to external services
-type Client interface {
-	Do(*http.Request) (resp *http.Response, err error)
-}
-
 // LoraWAN used to communicate to LoRaWAN external system
 type LoraWAN struct {
-	baseURL string
-	client  Client
-}
-
-func NewLoraWAN(baseURL string, client Client) *LoraWAN {
-	return &LoraWAN{
-		baseURL: baseURL,
-		client:  client,
-	}
+	fullURL *url.URL
+	client  *http.Client
 }
 
 const endpoint = "/sensor-onboarding-sample" // endpoint for saving DevEUI via LoRaWAN
 
-// RegisterDevice registers new device using LoraWAN external service
-func (l *LoraWAN) RegisterDevice(ctx context.Context) (*device.Device, error) {
-	device := device.NewDevice()
-	identifier := device.GetIdentifier()
+func NewLoraWAN(baseURL string, timeout time.Duration) (*LoraWAN, error) {
+	path, err := url.JoinPath(baseURL, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to join url: %w", err)
+	}
+
+	fullURL, err := url.Parse(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse url: %w", err)
+	}
+
+	return &LoraWAN{
+		fullURL: fullURL,
+		client: &http.Client{
+			Timeout: timeout,
+		},
+	}, nil
+}
+
+// RegisterDevice registers a new device using LoraWAN external service
+func (l *LoraWAN) RegisterDevice(ctx context.Context, newDevice *device.Device) error {
+	reqBody := map[string]string{"deveui": newDevice.GetIdentifier()}
+
 	b := new(bytes.Buffer)
-	reqBody := map[string]string{"Deveui": identifier}
-
-	err := json.NewEncoder(b).Encode(&reqBody)
-	if err != nil {
-		return nil, err
+	if err := json.NewEncoder(b).Encode(&reqBody); err != nil {
+		return fmt.Errorf("failed to encode request body: %w", err)
 	}
 
-	fullUrl := l.baseURL + endpoint
-	req, err := http.NewRequestWithContext(ctx, "POST", fullUrl, b)
+	req, err := http.NewRequestWithContext(ctx, "POST", l.fullURL.String(), b)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := l.client.Do(req)
 	if err != nil {
-		return nil, err
-	}
-
-	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to send request: %w", err)
 	}
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		return device, nil
-	} else {
-		return nil, errors.New(resp.Status)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return fmt.Errorf("request failed: %s", resp.Status)
 	}
+
+	return nil
 }

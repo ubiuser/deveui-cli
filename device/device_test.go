@@ -1,90 +1,24 @@
 package device
 
 import (
+	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestCanGenerateValidCode(t *testing.T) {
-	allowedChars := []string{"A", "B", "C", "D", "E", "F", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
-	device := NewDevice()
+func TestNewDevice(t *testing.T) {
+	t.Parallel()
 
-	if device == nil {
-		t.Errorf("deivce should not be nil, but is %s", device)
-	}
+	got, err := NewDevice()
+	require.NoError(t, err)
 
-	identifier := device.GetIdentifier()
-	code := device.GetCode()
+	// regex can be tested and explained here: https://regex101.com/
 
-	if len(code) != 5 {
-		t.Errorf("code should  be 5 characters long, but is %d", len(code))
-	}
+	reId := regexp.MustCompile("^[0-9A-F]{16}$")
+	assert.True(t, reId.MatchString(got.GetIdentifier()))
 
-	if identifier[len(identifier)-5:] != code {
-		t.Errorf("code should be last 5 characters of identifier, but is %s", code)
-	}
-
-	hasChar := false
-	for _, char := range allowedChars {
-		if char == string(code[0]) {
-			hasChar = true
-		} else if hasChar {
-			break
-		}
-	}
-
-	if hasChar == false {
-		t.Errorf("first char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[0]))
-	}
-
-	hasChar = false
-	for _, char := range allowedChars {
-		if char == string(code[1]) {
-			hasChar = true
-		} else if hasChar {
-			break
-		}
-	}
-
-	if hasChar == false {
-		t.Errorf("second char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[1]))
-	}
-
-	hasChar = false
-	for _, char := range allowedChars {
-		if char == string(code[2]) {
-			hasChar = true
-		} else if hasChar {
-			break
-		}
-	}
-
-	if hasChar == false {
-		t.Errorf("third char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[2]))
-	}
-
-	hasChar = false
-	for _, char := range allowedChars {
-		if char == string(code[3]) {
-			hasChar = true
-		} else if hasChar {
-			break
-		}
-	}
-
-	if hasChar == false {
-		t.Errorf("fourth char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[3]))
-	}
-
-	hasChar = false
-	for _, char := range allowedChars {
-		if char == string(code[4]) {
-			hasChar = true
-		} else if hasChar {
-			break
-		}
-	}
-
-	if hasChar == false {
-		t.Errorf("fifth char should be A, B, C, D, E, F, 0, 1, 2, 3, 4, 5, 6, 7, 8 or 9: but is: %s", string(code[4]))
-	}
+	reCode := regexp.MustCompile("^[0-9A-F]{5}$")
+	assert.True(t, reCode.MatchString(got.GetCode()))
 }

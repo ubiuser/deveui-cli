@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/NickGowdy/deveui-cli/client"
@@ -22,7 +26,10 @@ func main() {
 	proc := processor.New(cfg.CodeRegistrationLimit, cfg.MaxConcurrent, loraWAN)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	proc.Start(ctx, cancel)
+
+	go proc.Start(ctx, cancel)
+
+	handleGracefulShutdown(ctx, cancel)
 }
 
 func mustReadConfig() config {
@@ -41,4 +48,41 @@ func mustCreateClient(baseURL string, timeout time.Duration) *client.LoraWAN {
 	}
 
 	return loraWAN
+}
+
+func handleGracefulShutdown(ctx context.Context, cancel context.CancelFunc) {
+	const (
+		shutdownTimeout = 5 * time.Second
+
+		shutdownTimeoutExpired = 1
+		forcedExit             = 2
+	)
+
+	// create interrupt signal listener, use the app's context
+	ctx, _ = signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+
+	// block and listen for the interrupt signal
+	<-ctx.Done()
+
+	log.Println("shutting down")
+
+	// let the ctx chain know that the app is terminating
+	cancel()
+
+	go func() {
+		// restart listening for the force exist signal, any new context will do here
+		// e.g. press Ctrl+C again to force
+		ctx2, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+		select {
+		case <-time.After(shutdownTimeout):
+			log.Println("shutdown timeout expired")
+
+			os.Exit(shutdownTimeoutExpired)
+		case <-ctx2.Done():
+			log.Println("forced exit")
+
+			os.Exit(forcedExit)
+		}
+	}()
 }

@@ -40,7 +40,7 @@ func (d Device) GetCode() string {
 
 // String returns a string representation of the device (see Stringer interface at https://go.dev/tour/methods/17)
 func (d Device) String() string {
-	return fmt.Sprintf("device has identifier: %s and code: %s", d.identifier, d.code)
+	return fmt.Sprintf("{id: %s, code: %s}", d.identifier, d.code)
 }
 
 // Generate valid DevEUI identifier value.
